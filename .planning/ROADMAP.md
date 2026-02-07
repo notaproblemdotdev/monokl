@@ -27,12 +27,12 @@ This roadmap delivers a unified terminal dashboard that aggregates work items an
 4. Failed CLI calls raise exceptions with descriptive error messages (no silent failures)
 5. Unit tests exist for all Pydantic models with valid and invalid input cases
 
-**Plans:** TBD
+**Plans:** 3 plans in 3 waves
 
 Plans:
-- [ ] 01-01: Set up project structure with UV, Ruff, MyPy, pytest
-- [ ] 01-02: Create Pydantic models for MR/PR and Issue data structures
-- [ ] 01-03: Implement async subprocess utilities with proper error handling
+- [x] 01-01-PLAN.md — UV project init, Ruff/MyPy/pytest setup, directory structure
+- [ ] 01-02-PLAN.md — Pydantic models for MR/PR and Issue data structures
+- [ ] 01-03-PLAN.md — Async subprocess utilities with Textual Workers API, error handling
 
 ### Phase 2: CLI Adapters
 
@@ -88,7 +88,7 @@ Phases execute in numeric order: 1 → 2 → 3
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation | 0/3 | Not started | - |
+| 1. Foundation | 1/3 | In progress | 2026-02-07 |
 | 2. CLI Adapters | 0/3 | Not started | - |
 | 3. Dashboard UI | 0/3 | Not started | - |
 
