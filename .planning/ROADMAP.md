@@ -53,7 +53,7 @@ Plans:
 **Plans:** 3 plans in 2 waves
 
 Plans:
-- [ ] 02-01-PLAN.md — CLI detection mechanism and base adapter enhancements
+- [x] 02-01-PLAN.md — CLI detection mechanism and base adapter enhancements
 - [ ] 02-02-PLAN.md — GitLab glab adapter with MR fetching
 - [ ] 02-03-PLAN.md — Jira acli adapter with work item fetching
 
@@ -89,8 +89,8 @@ Phases execute in numeric order: 1 → 2 → 3
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation | 3/3 | ✓ Complete | 2025-02-07 |
-| 2. CLI Adapters | 0/3 | Not started | - |
+| 2. CLI Adapters | 1/3 | In Progress | - |
 | 3. Dashboard UI | 0/3 | Not started | - |
 
 ---
-*Last updated: 2025-02-07 after Phase 1 completion*
+*Last updated: 2026-02-07 after 02-01 completion*

@@ -5,33 +5,34 @@
 See: .planning/PROJECT.md (updated 2025-02-07)
 
 **Core value:** One dashboard showing all assigned work items and pending PRs/MRs without switching between browser tabs or context switching between platforms.
-**Current focus:** Phase 1 - Foundation
+**Current focus:** Phase 2 - CLI Adapters
 
 ## Current Position
 
-Phase: 1 of 3 (Foundation)
-Plan: 3 of 3 in current phase
-Status: Phase complete
-Last activity: 2026-02-07 — Completed 01-03-PLAN.md (Async subprocess utilities)
+Phase: 2 of 3 (CLI Adapters)
+Plan: 1 of 3 in current phase
+Status: In progress
+Last activity: 2026-02-07 — Completed 02-01-PLAN.md (CLI Detection Mechanism)
 
-Progress: [███░░░░░░░] 33% (3 of 9 total plans)
+Progress: [████░░░░░░] 44% (4 of 9 total plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 3
-- Average duration: 4.1 min
-- Total execution time: 0.21 hours
+- Total plans completed: 4
+- Average duration: 4.8 min
+- Total execution time: 0.32 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 1. Foundation | 3/3 | 12m 33s | 4m 11s |
+| 2. CLI Adapters | 1/3 | 8m 0s | 8m 0s |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (2m 33s), 01-02 (4m 0s), 01-03 (6m 0s)
-- Trend: Complexity increasing as expected (setup -> models -> async)
+- Last 5 plans: 01-02 (4m 0s), 01-03 (6m 0s), 02-01 (8m 0s)
+- Trend: Complexity increasing as expected
 
 *Updated after each plan completion*
 
@@ -65,6 +66,14 @@ Recent decisions affecting current work:
 - Use TypeVar for generic model parsing in fetch_and_parse()
 - Cache CLI availability check in adapter to avoid repeated which() calls
 
+**New from 02-01:**
+- Use TypedDict for DetectionResult to provide clear field names and type safety
+- Cache detection results at registry level after first detect_all() call
+- Use lightweight auth check commands (e.g., "auth status") rather than data fetching
+- Return copies of cached results to prevent external mutation
+- Clear cache when new detector registered to ensure freshness
+- Registry pattern: register detectors, detect_all returns all results, query methods filter
+
 ### Pending Todos
 
 None yet.
@@ -75,14 +84,13 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-07T20:35:00Z
-Stopped at: Completed 01-03-PLAN.md
+Last session: 2026-02-07T19:50:00Z
+Stopped at: Completed 02-01-PLAN.md
 Resume file: None
 
 ## Next Phase
 
-Phase 2: CLI Adapters - Ready to begin
-- Implement GitLab adapter using glab CLI
-- Implement Jira adapter using acli CLI
-- Add auto-detection logic for available CLIs
-- Build integration tests for real CLI interactions
+Phase 2: CLI Adapters - In Progress
+- ✓ 02-01: CLI Detection Mechanism complete
+- Next: 02-02: GitLab glab adapter with MR fetching
+- Then: 02-03: Jira acli adapter with work item fetching
