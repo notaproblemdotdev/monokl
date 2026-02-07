@@ -15,7 +15,13 @@ class CLIError(Exception):
 class CLIAuthError(CLIError):
     """Raised when CLI command fails due to authentication issues."""
 
-    AUTH_PATTERNS = ["authentication failed", "unauthorized", "401", "not logged in"]
+    AUTH_PATTERNS = [
+        "authentication failed",
+        "unauthorized",
+        "401",
+        "not logged in",
+        "not authenticated",
+    ]
 
     def __init__(self, command: list[str], returncode: int, stderr: str) -> None:
         super().__init__(command, returncode, stderr)
