@@ -4,7 +4,7 @@ import asyncio
 import json
 import shutil
 from collections.abc import Callable
-from typing import Any, TypeVar, Type
+from typing import Any, TypeVar, Type, cast
 
 from pydantic import BaseModel
 from textual.worker import Worker, get_current_worker
@@ -90,10 +90,13 @@ def fetch_with_worker(
     async def _exclusive_fetch() -> Any:
         return await fetch_func(*args, **kwargs)
 
-    return widget.run_worker(
-        _exclusive_fetch,
-        exclusive=True,  # Prevents race conditions
-        thread=True,  # Run in thread for CPU-bound parsing
+    return cast(
+        Worker[Any],
+        widget.run_worker(
+            _exclusive_fetch,
+            exclusive=True,  # Prevents race conditions
+            thread=True,  # Run in thread for CPU-bound parsing
+        ),
     )
 
 

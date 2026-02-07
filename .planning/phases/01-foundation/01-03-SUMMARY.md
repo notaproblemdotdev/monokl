@@ -82,7 +82,8 @@ Each task was committed atomically:
 3. **Task 3: Add model parsing to CLIAdapter** - `69f86b6` (feat)
 4. **Task 4: Create async utility tests** - `ff03209` (test)
 
-**Plan metadata:** [pending]
+**Plan metadata:** `b23f065` (docs: complete async subprocess utilities plan)
+**Post-execution fix:** `ae8754e` (fix: mypy type error)
 
 ## Files Created/Modified
 
@@ -111,7 +112,16 @@ None - followed plan as specified. All implementations match the technical requi
 
 ## Deviations from Plan
 
-None - plan executed exactly as written.
+### Auto-fixed Issues
+
+**1. [Rule 1 - Bug] Fixed mypy type error in fetch_with_worker**
+
+- **Found during:** Verification (type checking)
+- **Issue:** `widget.run_worker()` returns `Any` causing mypy error "Returning Any from function declared to return Worker[Any]"
+- **Fix:** Added explicit `cast(Worker[Any], ...)` to satisfy type checker while maintaining Textual API compatibility
+- **Files modified:** src/monocli/async_utils.py
+- **Verification:** `uv run mypy src/monocli/async_utils.py` passes
+- **Commit:** ae8754e (post-execution fix)
 
 ## Issues Encountered
 
@@ -123,6 +133,13 @@ One test initially failed (`test_fetch_json_parses_echo_output`) because it expe
 - Textual Workers pattern documented and ready for dashboard integration
 - Error handling infrastructure in place for graceful degradation
 - Model parsing utilities tested and ready for GitLab/GitHub/Jira adapters
+
+## Self-Check: PASSED
+
+- ✓ All created files exist: src/monocli/exceptions.py, src/monocli/async_utils.py, tests/test_async_utils.py
+- ✓ All commits present: 6 task commits + 1 metadata commit + 1 post-execution fix
+- ✓ All 21 tests pass
+- ✓ Type checking passes with mypy
 
 ---
 *Phase: 01-foundation*
