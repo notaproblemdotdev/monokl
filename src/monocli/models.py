@@ -10,7 +10,26 @@ from datetime import datetime
 from enum import Enum
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field, HttpUrl
+from pydantic import BaseModel, BeforeValidator, ConfigDict, Field, HttpUrl
+from typing_extensions import Annotated
+
+
+def parse_datetime(value: datetime | str | None) -> datetime | None:
+    """Parse ISO 8601 datetime string or return datetime object."""
+    if value is None:
+        return None
+    if isinstance(value, datetime):
+        return value
+    if isinstance(value, str):
+        # Try parsing ISO 8601 format (handles both 'Z' and '+00:00' suffixes)
+        if value.endswith("Z"):
+            value = value[:-1] + "+00:00"
+        return datetime.fromisoformat(value)
+    raise ValueError(f"Invalid datetime value: {value}")
+
+
+# Type alias for datetime fields that accept ISO 8601 strings
+IsoDateTime = Annotated[datetime | None, BeforeValidator(parse_datetime)]
 
 
 class WorkItemStatus(str, Enum):
@@ -63,9 +82,9 @@ class PullRequest(BaseModel):
     )
     html_url: HttpUrl = Field(..., description="Pull request URL")
     draft: bool = Field(default=False, description="Whether this is a draft PR")
-    created_at: datetime | None = Field(
+    created_at: IsoDateTime = Field(
         default=None,
-        description="When the PR was created",
+        description="When the PR was created (ISO 8601 format)",
     )
     body: str | None = Field(default=None, description="Pull request description")
 
@@ -116,9 +135,9 @@ class MergeRequest(BaseModel):
     web_url: HttpUrl = Field(..., description="Merge request URL")
     source_branch: str = Field(..., description="Source branch name")
     target_branch: str = Field(..., description="Target branch name")
-    created_at: datetime | None = Field(
+    created_at: IsoDateTime = Field(
         default=None,
-        description="When the MR was created",
+        description="When the MR was created (ISO 8601 format)",
     )
     draft: bool = Field(default=False, description="Whether this is a draft MR")
     description: str | None = Field(default=None, description="Merge request description")
@@ -171,9 +190,9 @@ class GitHubIssue(BaseModel):
         default_factory=list,
         description="List of label names",
     )
-    created_at: datetime | None = Field(
+    created_at: IsoDateTime = Field(
         default=None,
-        description="When the issue was created",
+        description="When the issue was created (ISO 8601 format)",
     )
     body: str | None = Field(default=None, description="Issue description")
     assignees: list[dict[str, Any]] = Field(
@@ -227,7 +246,8 @@ class JiraWorkItem(BaseModel):
     @property
     def summary(self) -> str:
         """Get the issue summary/title."""
-        return self.fields.get("summary", "")
+        value = self.fields.get("summary", "")
+        return str(value) if value is not None else ""
 
     @property
     def status(self) -> str:
