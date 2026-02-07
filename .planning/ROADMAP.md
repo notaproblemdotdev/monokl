@@ -50,12 +50,12 @@ Plans:
 5. All CLI calls use existing authentication (no separate auth flow in the app)
 6. Async tests verify each CLI adapter handles success, auth failure, and network errors
 
-**Plans:** TBD
+**Plans:** 3 plans in 2 waves
 
 Plans:
-- [ ] 02-01: Create CLI adapter base class and detection mechanism
-- [ ] 02-02: Implement GitLab glab adapter with MR fetching
-- [ ] 02-03: Implement Jira acli adapter with work item fetching
+- [ ] 02-01-PLAN.md — CLI detection mechanism and base adapter enhancements
+- [ ] 02-02-PLAN.md — GitLab glab adapter with MR fetching
+- [ ] 02-03-PLAN.md — Jira acli adapter with work item fetching
 
 ### Phase 3: Dashboard UI
 
