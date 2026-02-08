@@ -40,7 +40,7 @@ class JiraAdapter(CLIAdapter):
     ) -> list[JiraWorkItem]:
         """Fetch Jira issues assigned to current user.
 
-        Uses acli jira issue list with --json flag to fetch issues.
+        Uses acli jira workitem search with --jql and --json flags to fetch issues.
         Filters by assignee and status to show only relevant items.
 
         Args:
@@ -65,11 +65,11 @@ class JiraAdapter(CLIAdapter):
         """
         args = [
             "jira",
-            "issue",
-            "list",
+            "workitem",
+            "search",
+            "--jql",
+            "assignee = currentUser() AND statusCategory != Done",
             "--json",
-            f"--assignee={assignee}",
-            f"--status={status_filter}",
         ]
         return await self.fetch_and_parse(args, JiraWorkItem)
 
