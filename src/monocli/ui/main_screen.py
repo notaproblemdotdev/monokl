@@ -13,6 +13,7 @@ from textual.containers import Vertical
 from textual.reactive import reactive
 from textual.screen import Screen
 from textual.widgets import Label, Static
+from textual.workers import work
 
 from monocli.ui.sections import MergeRequestSection, WorkItemSection
 
@@ -108,11 +109,11 @@ class MainScreen(Screen):
         Uses DetectionRegistry to check which CLIs are available,
         then starts async workers to fetch data from each.
         """
-        from monocli.adapters.detection import DetectionRegistry
+        from monocli.adapters.detection import CLIDetector, DetectionRegistry
 
         registry = DetectionRegistry()
-        registry.register_detector("glab")
-        registry.register_detector("acli")
+        registry.register(CLIDetector("glab", ["auth", "status"]))
+        registry.register(CLIDetector("acli", ["whoami"]))
 
         # Start detection and fetching
         self.fetch_merge_requests()
@@ -124,7 +125,7 @@ class MainScreen(Screen):
         Uses @work(exclusive=True) to prevent race conditions.
         Updates the MR section with data when complete.
         """
-        from textual.worker import work
+        from monocli.adapters.gitlab import GitLabAdapter
 
         self.mr_section.show_loading()
         self.mr_loading = True
@@ -132,8 +133,6 @@ class MainScreen(Screen):
         @work(exclusive=True)
         async def _fetch_mrs() -> None:
             """Worker to fetch merge requests."""
-            from monocli.adapters.gitlab import GitLabAdapter
-
             adapter = GitLabAdapter()
             if not adapter.is_available():
                 self.mr_section.set_error("glab CLI not found")
@@ -154,8 +153,8 @@ class MainScreen(Screen):
             finally:
                 self.mr_loading = False
 
-        # Start the worker
-        _fetch_mrs()
+        # Start the worker (fire-and-forget)
+        _ = _fetch_mrs()
 
     def fetch_work_items(self) -> None:
         """Fetch work items from Jira.
@@ -163,7 +162,7 @@ class MainScreen(Screen):
         Uses @work(exclusive=True) to prevent race conditions.
         Updates the work items section with data when complete.
         """
-        from textual.worker import work
+        from monocli.adapters.jira import JiraAdapter
 
         self.work_section.show_loading()
         self.work_loading = True
@@ -171,8 +170,6 @@ class MainScreen(Screen):
         @work(exclusive=True)
         async def _fetch_work() -> None:
             """Worker to fetch work items."""
-            from monocli.adapters.jira import JiraAdapter
-
             adapter = JiraAdapter()
             if not adapter.is_available():
                 self.work_section.set_error("acli CLI not found")
@@ -193,8 +190,8 @@ class MainScreen(Screen):
             finally:
                 self.work_loading = False
 
-        # Start the worker
-        _fetch_work()
+        # Start the worker (fire-and-forget)
+        _ = _fetch_work()
 
     def switch_section(self) -> None:
         """Switch between MR and Work sections.
