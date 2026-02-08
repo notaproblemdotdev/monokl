@@ -126,6 +126,10 @@ Recent decisions affecting current work:
 - acli whoami doesn't exist and was causing auth check failures
 - Consistent auth command between JiraAdapter and CLIDetector
 
+### Roadmap Evolution
+
+- Phase 4 added: Add proper logging with structlog
+
 ### Pending Todos
 
 None yet.
@@ -142,19 +146,19 @@ Resume file: None
 
 ## Next Phase
 
-Phase 3: Dashboard UI - **COMPLETE**
-- All 4 plans completed (03-01: Sections, 03-02: MainScreen, 03-03: Navigation, 03-05: Gap Closure)
+Phase 4: Add Logging with Structlog - **Not Started**
+- Add proper logging infrastructure using structlog
+- Logs to both console and file
+- Configurable log levels
+- Debug mode support
+
+**Phase 3: Dashboard UI - COMPLETE**
+- All 5 plans completed (03-01 through 03-05)
 - v1 requirements fully implemented
-- Dashboard displays merge requests and work items
-- Full keyboard navigation: Tab switching, j/k arrows, 'o' for browser
-- Auto-detection of CLIs with graceful error handling
-- Comprehensive test coverage with pytest and Pilot API
-- Gap closure: Fixed acli auth check command
 
 **Project v1 is feature complete!**
 
-Next steps could include:
+Future steps could include:
 - v2 features: refresh (r/F5), search/filter (/), help (?), GitHub support
-- Manual testing with real CLIs
 - Documentation improvements
 - Packaging and distribution

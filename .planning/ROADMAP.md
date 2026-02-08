@@ -8,7 +8,8 @@ This roadmap delivers a unified terminal dashboard that aggregates work items an
 
 - [x] **Phase 1: Foundation** - Async infrastructure and data models ✓
 - [x] **Phase 2: CLI Adapters** - Auto-detection and data fetching from platform CLIs ✓
-- [ ] **Phase 3: Dashboard UI** - Textual widgets, navigation, and browser integration
+- [x] **Phase 3: Dashboard UI** - Textual widgets, navigation, and browser integration ✓
+- [ ] **Phase 4: Add Logging with Structlog** - Add proper logging infrastructure
 
 ## Phase Details
 
@@ -83,16 +84,40 @@ Plans:
 - [x] 03-04-PLAN.md — Fix Textual workers API (replace deprecated @work decorator)
 - [x] 03-05-PLAN.md — Fix acli auth check command (replace invalid whoami command)
 
+### Phase 4: Add Logging with Structlog
+
+**Goal:** Add proper logging infrastructure to the application for debugging and monitoring
+
+**Depends on:** Phase 3
+
+**Requirements:** LOG-01, LOG-02
+
+**Success Criteria** (what must be TRUE):
+1. Application uses structlog for structured logging
+2. Logs are written to both console and file
+3. Log level is configurable
+4. Sensitive data is not logged
+5. Debug mode flag enables verbose logging
+
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd-plan-phase 4 to break down)
+
+**Details:**
+[To be added during planning]
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3
+Phases execute in numeric order: 1 → 2 → 3 → 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation | 3/3 | ✓ Complete | 2025-02-07 |
 | 2. CLI Adapters | 3/3 | ✓ Complete | 2026-02-07 |
 | 3. Dashboard UI | 5/5 | ✓ Complete | 2026-02-08 |
+| 4. Add Logging | 0/0 | Not planned | - |
 
 ---
 *Last updated: 2026-02-07 after 02-03 completion (Phase 2 complete)*
