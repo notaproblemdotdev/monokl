@@ -78,7 +78,7 @@ Plans:
 
 Plans:
 - [x] 03-01-PLAN.md — Create DataTable section widgets (MergeRequestSection, WorkItemSection)
-- [ ] 03-02-PLAN.md — Build main screen with 50/50 layout and async data fetching
+- [x] 03-02-PLAN.md — Build main screen with 50/50 layout and async data fetching
 - [ ] 03-03-PLAN.md — Implement keyboard navigation and browser integration
 
 ## Progress

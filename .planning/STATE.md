@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2025-02-07)
 ## Current Position
 
 Phase: 3 of 3 (Dashboard UI)
-Plan: 1 of 3 in current phase
+Plan: 2 of 3 in current phase
 Status: In progress
-Last activity: 2026-02-08 — Completed 03-01-PLAN.md (Section Widgets)
+Last activity: 2026-02-08 — Completed 03-02-PLAN.md (Main Screen)
 
-Progress: [███████░░░] 78% (7 of 9 total plans)
+Progress: [████████░░] 89% (8 of 9 total plans)
 
 ## Performance Metrics
 
@@ -29,11 +29,11 @@ Progress: [███████░░░] 78% (7 of 9 total plans)
 |-------|-------|-------|----------|
 | 1. Foundation | 3/3 | 12m 33s | 4m 11s |
 | 2. CLI Adapters | 3/3 | 14m 0s | 4m 40s |
-| 3. Dashboard UI | 1/3 | 4m 0s | 4m 0s |
+| 3. Dashboard UI | 2/3 | 7m 0s | 3m 30s |
 
 **Recent Trend:**
-- Last 5 plans: 02-03 (3m), 03-01 (4m 0s)
-- Trend: Section widgets built on established patterns from models
+- Last 5 plans: 02-03 (3m), 03-01 (4m), 03-02 (3m)
+- Trend: Main screen built on section widgets from 03-01
 
 *Updated after each plan completion*
 
@@ -96,6 +96,14 @@ Recent decisions affecting current work:
 - Title truncation with ellipsis (40 char limit)
 - Pilot API with TestApp wrapper for widget testing
 
+**New from 03-02:**
+- Nested @work decorator pattern for fire-and-forget async workers
+- DetectionRegistry with CLIDetector instances for CLI availability checking
+- Reactive active_section property with CSS border highlight
+- Fire-and-forget workers with `_ = worker_func()` to silence warnings
+- MainScreen.compose() stores section references as instance attributes
+- Error handling per section (CLI not found, not authenticated, network errors)
+
 ### Pending Todos
 
 None yet.
@@ -106,13 +114,13 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-08T10:17:09Z
-Stopped at: Completed 03-01-PLAN.md
+Last session: 2026-02-08T10:25:22Z
+Stopped at: Completed 03-02-PLAN.md
 Resume file: None
 
 ## Next Phase
 
 Phase 3: Dashboard UI - In Progress
-- Section widgets complete (MergeRequestSection, WorkItemSection)
-- Ready for 03-02: Main Screen with 50/50 layout
-- Section widgets expose update_data() and get_selected_url() for integration
+- MainScreen complete with 50/50 layout and async data fetching
+- Ready for 03-03: Keyboard navigation and browser integration
+- Active section tracking implemented, get_selected_url() ready for 'o' key
