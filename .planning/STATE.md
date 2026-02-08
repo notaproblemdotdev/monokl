@@ -115,7 +115,13 @@ Recent decisions affecting current work:
 - Pilot API for integration testing keyboard navigation
 - Silent error handling for browser open failures
 
-**New from 03-05 (Gap Closure):**
+**New from 03-04 (Gap Closure - Workers API):**
+- Migrated from deprecated @work decorator to Textual 7.x run_worker() API
+- self.run_worker(self.fetch_method(), exclusive=True) replaces @work(exclusive=True)
+- Workers now properly execute and resolve loading spinners to data/empty/error states
+- Textual 7.x compatibility achieved, no deprecated APIs used
+
+**New from 03-05 (Gap Closure - Auth Command):**
 - acli jira auth status is the correct command for auth checking
 - acli whoami doesn't exist and was causing auth check failures
 - Consistent auth command between JiraAdapter and CLIDetector
@@ -130,8 +136,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-08T11:22:00Z
-Stopped at: Completed 03-05-PLAN.md
+Last session: 2026-02-08T17:43:44Z
+Stopped at: Completed 03-04-PLAN.md (Gap Closure - Workers API)
 Resume file: None
 
 ## Next Phase
