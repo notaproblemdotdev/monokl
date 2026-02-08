@@ -13,7 +13,6 @@ from textual.containers import Vertical
 from textual.reactive import reactive
 from textual.screen import Screen
 from textual.widgets import Label, Static
-from textual.workers import work
 
 from monocli.ui.sections import MergeRequestSection, WorkItemSection
 
@@ -88,8 +87,10 @@ class MainScreen(Screen):
                 yield self.work_section
 
     def on_mount(self) -> None:
-        """Handle mount event - trigger data loading."""
+        """Handle mount event - trigger data loading and set initial focus."""
         self.detect_and_fetch()
+        # Set initial focus to MR section
+        self.mr_section.focus_table()
 
     def watch_active_section(self) -> None:
         """Update visual indicators when active section changes."""
@@ -119,79 +120,106 @@ class MainScreen(Screen):
         self.fetch_merge_requests()
         self.fetch_work_items()
 
-    def fetch_merge_requests(self) -> None:
-        """Fetch merge requests from GitLab.
-
-        Uses @work(exclusive=True) to prevent race conditions.
-        Updates the MR section with data when complete.
-        """
+    async def _fetch_mrs_worker(self) -> None:
+        """Worker to fetch merge requests."""
         from monocli.adapters.gitlab import GitLabAdapter
 
-        self.mr_section.show_loading()
-        self.mr_loading = True
+        adapter = GitLabAdapter()
+        if not adapter.is_available():
+            self.mr_section.set_error("glab CLI not found")
+            self.mr_loading = False
+            return
 
-        @work(exclusive=True)
-        async def _fetch_mrs() -> None:
-            """Worker to fetch merge requests."""
-            adapter = GitLabAdapter()
-            if not adapter.is_available():
-                self.mr_section.set_error("glab CLI not found")
+        try:
+            is_auth = await adapter.check_auth()
+            if not is_auth:
+                self.mr_section.set_error("glab not authenticated")
                 self.mr_loading = False
                 return
 
-            try:
-                is_auth = await adapter.check_auth()
-                if not is_auth:
-                    self.mr_section.set_error("glab not authenticated")
-                    self.mr_loading = False
-                    return
+            mrs = await adapter.fetch_assigned_mrs()
+            self.mr_section.update_data(mrs)
+        except Exception as e:
+            self.mr_section.set_error(str(e))
+        finally:
+            self.mr_loading = False
 
-                mrs = await adapter.fetch_assigned_mrs()
-                self.mr_section.update_data(mrs)
-            except Exception as e:
-                self.mr_section.set_error(str(e))
-            finally:
-                self.mr_loading = False
+    def fetch_merge_requests(self) -> None:
+        """Fetch merge requests from GitLab.
+
+        Uses run_worker to prevent race conditions.
+        Updates the MR section with data when complete.
+        """
+        self.mr_section.show_loading()
+        self.mr_loading = True
 
         # Start the worker (fire-and-forget)
-        _ = _fetch_mrs()
+        self.run_worker(self._fetch_mrs_worker(), exclusive=True)
+
+    async def _fetch_work_worker(self) -> None:
+        """Worker to fetch work items."""
+        from monocli.adapters.jira import JiraAdapter
+
+        adapter = JiraAdapter()
+        if not adapter.is_available():
+            self.work_section.set_error("acli CLI not found")
+            self.work_loading = False
+            return
+
+        try:
+            is_auth = await adapter.check_auth()
+            if not is_auth:
+                self.work_section.set_error("acli not authenticated")
+                self.work_loading = False
+                return
+
+            items = await adapter.fetch_assigned_items()
+            self.work_section.update_data(items)
+        except Exception as e:
+            self.work_section.set_error(str(e))
+        finally:
+            self.work_loading = False
 
     def fetch_work_items(self) -> None:
         """Fetch work items from Jira.
 
-        Uses @work(exclusive=True) to prevent race conditions.
+        Uses run_worker to prevent race conditions.
         Updates the work items section with data when complete.
         """
-        from monocli.adapters.jira import JiraAdapter
-
         self.work_section.show_loading()
         self.work_loading = True
 
-        @work(exclusive=True)
-        async def _fetch_work() -> None:
-            """Worker to fetch work items."""
-            adapter = JiraAdapter()
-            if not adapter.is_available():
-                self.work_section.set_error("acli CLI not found")
-                self.work_loading = False
-                return
-
-            try:
-                is_auth = await adapter.check_auth()
-                if not is_auth:
-                    self.work_section.set_error("acli not authenticated")
-                    self.work_loading = False
-                    return
-
-                items = await adapter.fetch_assigned_items()
-                self.work_section.update_data(items)
-            except Exception as e:
-                self.work_section.set_error(str(e))
-            finally:
-                self.work_loading = False
-
         # Start the worker (fire-and-forget)
-        _ = _fetch_work()
+        self.run_worker(self._fetch_work_worker(), exclusive=True)
+
+    def on_key(self, event) -> None:
+        """Handle keyboard events for navigation.
+
+        Args:
+            event: The key event from Textual.
+        """
+        if event.key == "tab":
+            # Tab switches active section
+            self.action_switch_section()
+            event.stop()
+        elif event.key in ("j", "down"):
+            # j or down arrow - navigate down in active section
+            if self.active_section == "mr":
+                self.mr_section.select_next()
+            else:
+                self.work_section.select_next()
+            event.stop()
+        elif event.key in ("k", "up"):
+            # k or up arrow - navigate up in active section
+            if self.active_section == "mr":
+                self.mr_section.select_previous()
+            else:
+                self.work_section.select_previous()
+            event.stop()
+        elif event.key == "o":
+            # o opens selected item in browser
+            self.action_open_selected()
+            event.stop()
 
     def switch_section(self) -> None:
         """Switch between MR and Work sections.
@@ -200,10 +228,10 @@ class MainScreen(Screen):
         """
         if self.active_section == "mr":
             self.active_section = "work"
-            self.work_section.focus()
+            self.work_section.focus_table()
         else:
             self.active_section = "mr"
-            self.mr_section.focus()
+            self.mr_section.focus_table()
 
     def action_switch_section(self) -> None:
         """Action handler for switching sections."""
@@ -227,6 +255,6 @@ class MainScreen(Screen):
         if url:
             try:
                 webbrowser.open(url)
-            except Exception:
-                # Log error but don't crash
-                pass
+            except Exception as e:
+                # Show brief notification on error
+                self.notify(f"Failed to open browser: {e}", severity="error")
