@@ -99,10 +99,10 @@ Plans:
 4. Sensitive data is not logged
 5. Debug mode flag enables verbose logging
 
-**Plans:** 0 plans
+**Plans:** 1 plan in 1 wave
 
 Plans:
-- [ ] TBD (run /gsd-plan-phase 4 to break down)
+- [ ] 04-01-PLAN.md — Set up structlog for structured logging with console/file output
 
 **Details:**
 [To be added during planning]
@@ -117,7 +117,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | 1. Foundation | 3/3 | ✓ Complete | 2025-02-07 |
 | 2. CLI Adapters | 3/3 | ✓ Complete | 2026-02-07 |
 | 3. Dashboard UI | 5/5 | ✓ Complete | 2026-02-08 |
-| 4. Add Logging | 0/0 | Not planned | - |
+| 4. Add Logging | 0/1 | Planned | - |
 
 ---
 *Last updated: 2026-02-07 after 02-03 completion (Phase 2 complete)*
