@@ -3,9 +3,19 @@
   "depth": "standard",
   "parallelization": true,
   "commit_docs": true,
-  "model_profile": "balanced",
+  "model_profile": "custom",
   "custom_models": {
-    "note": "User specified: kimi k2.5 for all"
+    "gsd-planner": "anthropic/claude-opus-4-6",
+    "gsd-roadmapper": "anthropic/claude-opus-4-6",
+    "gsd-executor": "kimi-for-coding/k2p5",
+    "gsd-debugger": "kimi-for-coding/k2p5",
+    "gsd-phase-researcher": "glm-4.7",
+    "gsd-project-researcher": "glm-4.7",
+    "gsd-research-synthesizer": "glm-4.7",
+    "gsd-codebase-mapper": "glm-4.7",
+    "gsd-verifier": "glm-4.7",
+    "gsd-plan-checker": "glm-4.7",
+    "gsd-integration-checker": "glm-4.7"
   },
   "workflow": {
     "research": true,
