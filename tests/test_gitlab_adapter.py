@@ -113,7 +113,7 @@ class TestFetchAssignedMRs:
                 )
                 mock_exec.return_value = mock_proc
 
-                mrs = await adapter.fetch_assigned_mrs()
+                mrs = await adapter.fetch_assigned_mrs(group="test-group")
 
         assert len(mrs) == 2
         assert all(isinstance(mr, MergeRequest) for mr in mrs)
@@ -153,7 +153,7 @@ class TestFetchAssignedMRs:
                 )
                 mock_exec.return_value = mock_proc
 
-                mrs = await adapter.fetch_assigned_mrs()
+                mrs = await adapter.fetch_assigned_mrs(group="test-group")
 
         assert mrs == []
 
@@ -166,7 +166,7 @@ class TestFetchAssignedMRs:
             mock_which.return_value = None
 
             with pytest.raises(CLINotFoundError) as exc_info:
-                await adapter.fetch_assigned_mrs()
+                await adapter.fetch_assigned_mrs(group="test-group")
 
         assert exc_info.value.cli_name == "glab"
 
@@ -193,7 +193,7 @@ class TestFetchAssignedMRs:
                 mock_exec.return_value = mock_proc
 
                 with pytest.raises(CLIAuthError) as exc_info:
-                    await adapter.fetch_assigned_mrs()
+                    await adapter.fetch_assigned_mrs(group="test-group")
 
         assert "not logged in" in exc_info.value.stderr.lower()
 
@@ -234,10 +234,16 @@ class TestFetchAssignedMRs:
                 mock_exec.return_value = mock_proc
 
                 # Fetch merged MRs
-                mrs = await adapter.fetch_assigned_mrs(state="merged")
+                mrs = await adapter.fetch_assigned_mrs(group="test-group", state="merged")
 
         assert len(mrs) == 1
         assert mrs[0].state == "merged"
+
+        # Verify the command was called with --merged flag
+        mock_exec.assert_called_once()
+        call_args = mock_exec.call_args
+        cmd_list = call_args[0]
+        assert "--merged" in cmd_list
 
     @pytest.mark.asyncio
     async def test_fetch_assigned_mrs_with_author_filter(self) -> None:
@@ -276,7 +282,7 @@ class TestFetchAssignedMRs:
                 mock_exec.return_value = mock_proc
 
                 # Fetch MRs by specific author
-                mrs = await adapter.fetch_assigned_mrs(author="alice")
+                mrs = await adapter.fetch_assigned_mrs(group="test-group", author="alice")
 
         assert len(mrs) == 1
         assert mrs[0].author["username"] == "alice"
@@ -285,7 +291,8 @@ class TestFetchAssignedMRs:
         mock_exec.assert_called_once()
         call_args = mock_exec.call_args
         cmd_list = call_args[0]
-        assert "--author=alice" in cmd_list
+        assert "--author" in cmd_list
+        assert "alice" in cmd_list
 
     @pytest.mark.asyncio
     async def test_fetch_assigned_mrs_validates_fields(self) -> None:
@@ -321,7 +328,7 @@ class TestFetchAssignedMRs:
                 )
                 mock_exec.return_value = mock_proc
 
-                mrs = await adapter.fetch_assigned_mrs()
+                mrs = await adapter.fetch_assigned_mrs(group="test-group")
 
         assert len(mrs) == 1
         mr = mrs[0]

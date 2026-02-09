@@ -38,35 +38,59 @@ class GitLabAdapter(CLIAdapter):
 
     async def fetch_assigned_mrs(
         self,
-        group: str = "axpo-pl",
+        group: str,
         assignee: str = "@me",
+        author: str | None = None,
+        state: str | None = None,
     ) -> list[MergeRequest]:
         """Fetch MRs assigned to current user.
 
         Uses glab mr list with --output json to fetch merge requests.
-        Filters by assignee and group to show only relevant MRs.
+        Filters by assignee, author, state, and group to show only relevant MRs.
 
         Args:
-            group: GitLab group to search (e.g., "axpo-pl")
+            group: GitLab group to search (required, e.g., "axpo-pl")
             assignee: Assignee filter ("@me" for current user, or username)
+            author: Optional author filter (username)
+            state: Optional state filter ("opened", "closed", "merged", "locked")
 
         Returns:
             List of validated MergeRequest models
 
         Raises:
+            ValueError: If group is empty or not provided
             CLINotFoundError: If glab is not installed
             CLIAuthError: If glab is not authenticated
+            CLIError: If glab returns an error (e.g., no git remotes found)
 
         Example:
             adapter = GitLabAdapter()
 
             # Fetch all open MRs assigned to current user
-            mrs = await adapter.fetch_assigned_mrs()
-
-            # Fetch MRs for different group
             mrs = await adapter.fetch_assigned_mrs(group="my-group")
+
+            # Fetch merged MRs by specific author
+            mrs = await adapter.fetch_assigned_mrs(
+                group="my-group",
+                author="alice",
+                state="merged"
+            )
         """
-        logger.info("Fetching merge requests", group=group, assignee=assignee)
+        # Validate group parameter
+        if not group:
+            raise ValueError(
+                "GitLab group is required. "
+                "Set MONOCLI_GITLAB_GROUP environment variable or "
+                "configure in ~/.config/monocli/config.yaml"
+            )
+
+        logger.info(
+            "Fetching merge requests",
+            group=group,
+            assignee=assignee,
+            author=author,
+            state=state,
+        )
         args = [
             "mr",
             "list",
@@ -78,12 +102,37 @@ class GitLabAdapter(CLIAdapter):
             "--output",
             "json",
         ]
+
+        # Add optional filters
+        if author:
+            args.extend(["--author", author])
+
+        if state:
+            # Map state values to glab flags
+            state_flag_map = {
+                "opened": "--open",
+                "closed": "--closed",
+                "merged": "--merged",
+            }
+            if state in state_flag_map:
+                args.append(state_flag_map[state])
+            # Note: glab doesn't have a --locked flag, we filter post-fetch if needed
+
         try:
             result = await self.fetch_and_parse(args, MergeRequest)
             logger.info("Fetched merge requests", count=len(result))
             return result
-        except (CLIAuthError, CLINotFoundError):
-            logger.warning("Failed to fetch merge requests", group=group)
+        except CLIAuthError:
+            logger.warning(
+                "Failed to fetch merge requests - authentication error",
+                group=group,
+            )
+            raise
+        except CLINotFoundError:
+            logger.warning(
+                "Failed to fetch merge requests - glab not found",
+                group=group,
+            )
             raise
 
     async def check_auth(self) -> bool:
@@ -105,9 +154,10 @@ class GitLabAdapter(CLIAdapter):
         """
         logger.debug("Checking GitLab authentication")
         try:
-            await self.run(["auth", "status"], check=True)
+            # Use shorter timeout for auth check (5s) and don't raise on error
+            await self.run(["auth", "status"], check=True, timeout=5.0)
             logger.debug("GitLab authenticated")
             return True
-        except (CLIAuthError, CLINotFoundError):
+        except (CLIAuthError, CLINotFoundError, TimeoutError):
             logger.warning("GitLab not authenticated")
             return False
