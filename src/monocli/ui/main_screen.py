@@ -16,6 +16,7 @@ from textual.screen import Screen
 from textual.widgets import Label, Static
 
 from monocli.ui.sections import MergeRequestContainer, WorkItemSection
+from monocli.ui.topbar import TopBar
 
 if TYPE_CHECKING:
     pass
@@ -76,7 +77,10 @@ class MainScreen(Screen):
 
     .section-label {
         text-style: bold;
-        padding: 1 0 0 0;
+        padding: 0;
+        margin: 0 0 1 0;
+        height: auto;
+        text-align: center;
     }
 
     #sections-container {
@@ -112,10 +116,15 @@ class MainScreen(Screen):
 
     def compose(self) -> ComposeResult:
         """Compose the main screen with two sections."""
+        from monocli import __version__
+
         with Vertical(id="sections-container"):
+            # App title above the merge requests section
+            yield TopBar(version=__version__, id="topbar")
+
             # Top section: Merge Requests (with two subsections)
             with Vertical(id="mr-container"):
-                yield Label("Merge Requests", classes="section-label")
+                yield Label("Pull/merge requests", classes="section-label")
                 self.mr_container = MergeRequestContainer()
                 yield self.mr_container
 
