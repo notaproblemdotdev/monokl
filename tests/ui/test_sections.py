@@ -10,6 +10,7 @@ from textual.app import App, ComposeResult
 
 from monocli.models import JiraWorkItem, MergeRequest
 from monocli.ui.sections import (
+    MergeRequestContainer,
     MergeRequestSection,
     SectionState,
     WorkItemSection,
@@ -19,7 +20,9 @@ from monocli.ui.sections import (
 class TestApp(App[None]):
     """Test app for wrapping section widgets."""
 
-    def __init__(self, section: MergeRequestSection | WorkItemSection) -> None:
+    def __init__(
+        self, section: MergeRequestSection | WorkItemSection | MergeRequestContainer
+    ) -> None:
         """Initialize test app with a section widget."""
         super().__init__()
         self.section = section
@@ -397,3 +400,146 @@ class TestSectionBaseFunctionality:
             section.update_data([mr])
             await pilot.pause()
             assert section.state == SectionState.DATA
+
+
+class TestMergeRequestContainer:
+    """Tests for MergeRequestContainer widget."""
+
+    @pytest.fixture
+    def sample_assigned_mrs(self) -> list[MergeRequest]:
+        """Create sample assigned MRs for testing."""
+        return [
+            MergeRequest(
+                iid=10,
+                title="Fix critical bug",
+                state="opened",
+                author={"name": "Alice", "username": "alice"},
+                web_url="https://gitlab.com/test/project/-/merge_requests/10",
+                source_branch="feature/bug-fix",
+                target_branch="main",
+                created_at=datetime(2024, 1, 15, 10, 30, 0),
+            ),
+        ]
+
+    @pytest.fixture
+    def sample_authored_mrs(self) -> list[MergeRequest]:
+        """Create sample authored MRs for testing."""
+        return [
+            MergeRequest(
+                iid=20,
+                title="Add new feature",
+                state="opened",
+                author={"name": "Test User", "username": "testuser"},
+                web_url="https://gitlab.com/test/project/-/merge_requests/20",
+                source_branch="feature/new-feature",
+                target_branch="main",
+                created_at=datetime(2024, 1, 16, 11, 0, 0),
+            ),
+        ]
+
+    @pytest.mark.asyncio
+    async def test_renders_two_subsections(self) -> None:
+        """Test that MergeRequestContainer renders two subsections."""
+        container = MergeRequestContainer()
+        app = TestApp(container)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+
+            # Check both subsections exist by querying from the app
+            opened_section = pilot.app.query_one("#mr-opened-by-me")
+            assigned_section = pilot.app.query_one("#mr-assigned-to-me")
+
+            assert opened_section is not None
+            assert assigned_section is not None
+
+    @pytest.mark.asyncio
+    async def test_updates_assigned_to_me(self, sample_assigned_mrs: list[MergeRequest]) -> None:
+        """Test that update_assigned_to_me updates the correct subsection."""
+        container = MergeRequestContainer()
+        app = TestApp(container)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            container.update_assigned_to_me(sample_assigned_mrs)
+            await pilot.pause()
+
+            # Check the assigned subsection has data
+            assert container.assigned_to_me_section.state == SectionState.DATA
+            assert container.assigned_to_me_section._item_count == 1
+
+    @pytest.mark.asyncio
+    async def test_updates_opened_by_me(self, sample_authored_mrs: list[MergeRequest]) -> None:
+        """Test that update_opened_by_me updates the correct subsection."""
+        container = MergeRequestContainer()
+        app = TestApp(container)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            container.update_opened_by_me(sample_authored_mrs)
+            await pilot.pause()
+
+            # Check the opened subsection has data
+            assert container.opened_by_me_section.state == SectionState.DATA
+            assert container.opened_by_me_section._item_count == 1
+
+    @pytest.mark.asyncio
+    async def test_show_loading_affects_both(self) -> None:
+        """Test that show_loading sets both subsections to loading."""
+        container = MergeRequestContainer()
+        app = TestApp(container)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            container.show_loading()
+            await pilot.pause()
+
+            assert container.opened_by_me_section.state == SectionState.LOADING
+            assert container.assigned_to_me_section.state == SectionState.LOADING
+
+    @pytest.mark.asyncio
+    async def test_get_active_section(self) -> None:
+        """Test get_active_section returns correct subsection."""
+        container = MergeRequestContainer()
+        app = TestApp(container)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+
+            opened = container.get_active_section("opened")
+            assigned = container.get_active_section("assigned")
+
+            assert opened == container.opened_by_me_section
+            assert assigned == container.assigned_to_me_section
+
+    @pytest.mark.asyncio
+    async def test_select_next_calls_subsection(
+        self, sample_assigned_mrs: list[MergeRequest]
+    ) -> None:
+        """Test that select_next delegates to the correct subsection."""
+        container = MergeRequestContainer()
+        app = TestApp(container)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            container.update_assigned_to_me(sample_assigned_mrs)
+            await pilot.pause()
+
+            # This should not raise an error
+            container.select_next("assigned")
+
+    @pytest.mark.asyncio
+    async def test_select_previous_calls_subsection(
+        self, sample_assigned_mrs: list[MergeRequest]
+    ) -> None:
+        """Test that select_previous delegates to the correct subsection."""
+        container = MergeRequestContainer()
+        app = TestApp(container)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            container.update_assigned_to_me(sample_assigned_mrs)
+            await pilot.pause()
+
+            # This should not raise an error
+            container.select_previous("assigned")

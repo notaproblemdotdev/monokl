@@ -15,7 +15,7 @@ from textual.reactive import reactive
 from textual.screen import Screen
 from textual.widgets import Label, Static
 
-from monocli.ui.sections import MergeRequestSection, WorkItemSection
+from monocli.ui.sections import MergeRequestContainer, WorkItemSection
 
 if TYPE_CHECKING:
     pass
@@ -43,6 +43,7 @@ class MainScreen(Screen):
 
     # Reactive state
     active_section: reactive[str] = reactive("mr")  # "mr" or "work"
+    active_mr_subsection: reactive[str] = reactive("assigned")  # "assigned" or "opened"
     mr_loading: reactive[bool] = reactive(False)
     work_loading: reactive[bool] = reactive(False)
 
@@ -111,10 +112,10 @@ class MainScreen(Screen):
     def compose(self) -> ComposeResult:
         """Compose the main screen with two sections."""
         with Vertical(id="sections-container"):
-            # Top section: Merge Requests
+            # Top section: Merge Requests (with two subsections)
             with Vertical(id="mr-container"):
-                self.mr_section = MergeRequestSection()
-                yield self.mr_section
+                self.mr_container = MergeRequestContainer()
+                yield self.mr_container
 
             # Bottom section: Work Items
             with Vertical(id="work-container"):
@@ -171,24 +172,24 @@ class MainScreen(Screen):
         """Fetch merge requests from GitLab.
 
         Runs as a background worker with exclusive=True to prevent race conditions.
-        Updates the MR section with data when complete.
+        Updates both "Opened by me" and "Assigned to me" subsections.
         """
         from monocli.adapters.gitlab import GitLabAdapter
         from monocli.config import ConfigError, get_config
 
-        self.mr_section.show_loading()
+        self.mr_container.show_loading()
         self.mr_loading = True
 
         adapter = GitLabAdapter()
         if not adapter.is_available():
-            self.mr_section.set_error("glab CLI not found")
+            self.mr_container.set_error("glab CLI not found")
             self.mr_loading = False
             return
 
         try:
             is_auth = await adapter.check_auth()
             if not is_auth:
-                self.mr_section.set_error("glab not authenticated")
+                self.mr_container.set_error("glab not authenticated")
                 self.mr_loading = False
                 return
 
@@ -197,27 +198,21 @@ class MainScreen(Screen):
             try:
                 group = config.require_gitlab_group()
             except ConfigError as e:
-                self.mr_section.set_error(str(e))
+                self.mr_container.set_error(str(e))
                 self.mr_loading = False
                 return
 
             # Fetch MRs assigned to me
             assigned_mrs = await adapter.fetch_assigned_mrs(group=group, assignee="@me")
 
-            # Fetch MRs authored by me (pass None for assignee to avoid glab conflict)
+            # Fetch MRs authored by me (pass empty assignee to avoid glab conflict)
             authored_mrs = await adapter.fetch_assigned_mrs(group=group, assignee="", author="@me")
 
-            # Combine and deduplicate by IID
-            seen_iids = set()
-            all_mrs = []
-            for mr in assigned_mrs + authored_mrs:
-                if mr.iid not in seen_iids:
-                    seen_iids.add(mr.iid)
-                    all_mrs.append(mr)
-
-            self.mr_section.update_data(all_mrs)
+            # Update each subsection with its specific data
+            self.mr_container.update_assigned_to_me(assigned_mrs)
+            self.mr_container.update_opened_by_me(authored_mrs)
         except Exception as e:
-            self.mr_section.set_error(str(e))
+            self.mr_container.set_error(str(e))
         finally:
             self.mr_loading = False
 
@@ -256,13 +251,22 @@ class MainScreen(Screen):
         """Switch between MR and Work sections.
 
         Called when Tab key is pressed to cycle between sections.
+        When in MR section, Tab also switches between "Assigned to me"
+        and "Opened by me" subsections.
         """
         if self.active_section == "mr":
-            self.active_section = "work"
-            self.work_section.focus()
+            # Switch between MR subsections or to Work section
+            if self.active_mr_subsection == "assigned":
+                self.active_mr_subsection = "opened"
+                self.mr_container.focus_section("opened")
+            else:
+                self.active_section = "work"
+                self.work_section.focus()
         else:
+            # From Work section, go back to MR "Assigned to me"
             self.active_section = "mr"
-            self.mr_section.focus()
+            self.active_mr_subsection = "assigned"
+            self.mr_container.focus_section("assigned")
 
     def action_switch_section(self) -> None:
         """Action handler for switching sections."""
@@ -279,7 +283,7 @@ class MainScreen(Screen):
         url: str | None = None
 
         if self.active_section == "mr":
-            url = self.mr_section.get_selected_url()
+            url = self.mr_container.get_selected_url(self.active_mr_subsection)
         else:
             url = self.work_section.get_selected_url()
 
@@ -293,14 +297,14 @@ class MainScreen(Screen):
     def action_move_down(self) -> None:
         """Action handler to move selection down."""
         if self.active_section == "mr":
-            self.mr_section.select_next()
+            self.mr_container.select_next(self.active_mr_subsection)
         else:
             self.work_section.select_next()
 
     def action_move_up(self) -> None:
         """Action handler to move selection up."""
         if self.active_section == "mr":
-            self.mr_section.select_previous()
+            self.mr_container.select_previous(self.active_mr_subsection)
         else:
             self.work_section.select_previous()
 

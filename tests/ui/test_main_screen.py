@@ -75,7 +75,15 @@ class TestMainScreen:
             screen = pilot.app.screen
 
             # Check loading state is set (may need to wait a tick for workers to start)
-            assert screen.mr_loading is True or screen.mr_section.state in [
+            # Check that MR subsections are in valid states
+            mr_assigned_state = screen.mr_container.assigned_to_me_section.state
+            mr_opened_state = screen.mr_container.opened_by_me_section.state
+            assert screen.mr_loading is True or mr_assigned_state in [
+                "loading",
+                "empty",
+                "error",
+            ]
+            assert screen.mr_loading is True or mr_opened_state in [
                 "loading",
                 "empty",
                 "error",
@@ -118,8 +126,11 @@ class TestMainScreen:
 
             # Check the section has data or appropriate state
             screen = pilot.app.screen
-            # After loading, state should be data, empty, or error (depending on test env)
-            assert screen.mr_section.state in ["data", "empty", "loading", "error"]
+            # After loading, both subsections should be in valid states
+            assigned_state = screen.mr_container.assigned_to_me_section.state
+            opened_state = screen.mr_container.opened_by_me_section.state
+            assert assigned_state in ["data", "empty", "loading", "error"]
+            assert opened_state in ["data", "empty", "loading", "error"]
 
     @pytest.mark.asyncio
     async def test_work_section_updates_with_data(self, app, monkeypatch):
@@ -170,7 +181,9 @@ class TestMainScreen:
             # Check error messages are shown (state should be error or empty)
             screen = pilot.app.screen
             # When CLI unavailable, set_error is called which sets error state
-            assert screen.mr_section.state in ["error", "empty"]
+            # Both subsections should be in error or empty state
+            assert screen.mr_container.assigned_to_me_section.state in ["error", "empty"]
+            assert screen.mr_container.opened_by_me_section.state in ["error", "empty"]
             assert screen.work_section.state in ["error", "empty"]
 
     @pytest.mark.asyncio
@@ -188,27 +201,49 @@ class TestMainScreen:
 
             # Check error messages are shown
             screen = pilot.app.screen
-            assert screen.mr_section.state in ["error", "empty"]
+            # Both subsections should be in error or empty state
+            assert screen.mr_container.assigned_to_me_section.state in ["error", "empty"]
+            assert screen.mr_container.opened_by_me_section.state in ["error", "empty"]
             assert screen.work_section.state in ["error", "empty"]
 
     @pytest.mark.asyncio
-    async def test_section_switching(self, app):
-        """Test that Tab key switches active section."""
+    async def test_section_switching(self, app, monkeypatch):
+        """Test that Tab key switches active section and MR subsections."""
+
+        # Mock adapters to avoid actual network calls
+        async def mock_fetch(*args, **kwargs):
+            return []
+
+        monkeypatch.setattr("monocli.adapters.gitlab.GitLabAdapter.fetch_assigned_mrs", mock_fetch)
+        monkeypatch.setattr("monocli.adapters.gitlab.GitLabAdapter.check_auth", lambda self: True)
+        monkeypatch.setattr("monocli.adapters.gitlab.GitLabAdapter.is_available", lambda self: True)
+        monkeypatch.setattr("monocli.adapters.jira.JiraAdapter.fetch_assigned_items", mock_fetch)
+        monkeypatch.setattr("monocli.adapters.jira.JiraAdapter.check_auth", lambda self: True)
+        monkeypatch.setattr("monocli.adapters.jira.JiraAdapter.is_available", lambda self: True)
+
         async with app.run_test() as pilot:
             screen = pilot.app.screen
+            await pilot.pause()
 
-            # Initial active section should be "mr"
+            # Initial active section should be "mr", subsection "assigned"
             assert screen.active_section == "mr"
+            assert screen.active_mr_subsection == "assigned"
 
-            # Press Tab to switch
+            # Press Tab to switch to "opened" subsection
             await pilot.press("tab")
 
-            # Active section should now be "work"
+            # Still in MR section, but now "opened" subsection is active
+            assert screen.active_section == "mr"
+            assert screen.active_mr_subsection == "opened"
+
+            # Press Tab to switch to Work section
+            await pilot.press("tab")
             assert screen.active_section == "work"
 
-            # Press Tab again to switch back
+            # Press Tab again to switch back to MR "assigned" subsection
             await pilot.press("tab")
             assert screen.active_section == "mr"
+            assert screen.active_mr_subsection == "assigned"
 
     @pytest.mark.asyncio
     async def test_loading_state_transitions(self, app, monkeypatch):
@@ -278,7 +313,9 @@ class TestMainScreenDataHandling:
 
             screen = pilot.app.screen
             # Should show empty state when no data
-            assert screen.mr_section.state in ["empty", "loading", "error"]
+            # Both MR subsections should be in empty or error state
+            assert screen.mr_container.assigned_to_me_section.state in ["empty", "loading", "error"]
+            assert screen.mr_container.opened_by_me_section.state in ["empty", "loading", "error"]
             assert screen.work_section.state in ["empty", "loading", "error"]
 
     @pytest.mark.asyncio
@@ -299,5 +336,6 @@ class TestMainScreenDataHandling:
             await pilot.pause()
 
             screen = pilot.app.screen
-            # Should show error state
-            assert screen.mr_section.state == "error"
+            # Should show error state in both subsections
+            assert screen.mr_container.assigned_to_me_section.state == "error"
+            assert screen.mr_container.opened_by_me_section.state == "error"

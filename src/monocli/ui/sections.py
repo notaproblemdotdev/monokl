@@ -38,6 +38,46 @@ class BaseSection(Static):
     state: reactive[str] = reactive(SectionState.LOADING)
     error_message: reactive[str] = reactive("")
 
+    DEFAULT_CSS = """
+    BaseSection {
+        height: 100%;
+        width: 100%;
+    }
+
+    BaseSection #header {
+        height: auto;
+        padding: 0;
+        margin: 0 0 1 0;
+    }
+
+    BaseSection #title {
+        padding: 0;
+        margin: 0;
+    }
+
+    BaseSection #content {
+        height: 1fr;
+        width: 100%;
+    }
+
+    BaseSection #spinner-container {
+        display: none;
+        height: auto;
+        width: 100%;
+    }
+
+    BaseSection #data-table {
+        height: 100%;
+        width: 100%;
+    }
+
+    BaseSection #message {
+        height: 100%;
+        width: 100%;
+        content-align: center middle;
+    }
+    """
+
     def __init__(self, title: str, *args: object, **kwargs: object) -> None:
         """Initialize the base section.
 
@@ -305,6 +345,171 @@ class MergeRequestSection(BaseSection):
             pass
 
         return None
+
+
+class MergeRequestContainer(Static):
+    """Container for merge request sections with responsive layout.
+
+    Displays two subsections:
+    - "Opened by me": MRs authored by the current user
+    - "Assigned to me": MRs assigned to the current user
+
+    Uses responsive layout: two columns when terminal is wide (>= 100 cols),
+    two rows when terminal is narrow (< 100 cols).
+    """
+
+    DEFAULT_CSS = """
+    MergeRequestContainer {
+        height: 100%;
+        width: 100%;
+    }
+
+    #mr-subsections {
+        height: 100%;
+        width: 100%;
+    }
+
+    #mr-subsections > MergeRequestSection {
+        width: 50%;
+        height: 100%;
+    }
+
+    #mr-subsections.vertical > MergeRequestSection {
+        width: 100%;
+        height: 50%;
+    }
+    """
+
+    # Width threshold for switching between horizontal and vertical layout
+    LAYOUT_THRESHOLD = 100
+
+    def __init__(self, *args: object, **kwargs: object) -> None:
+        """Initialize the MR container with two subsections."""
+        super().__init__(*args, **kwargs)
+        self.opened_by_me_section = MergeRequestSection(id="mr-opened-by-me")
+        self.opened_by_me_section.section_title = "Opened by me"
+        self.assigned_to_me_section = MergeRequestSection(id="mr-assigned-to-me")
+        self.assigned_to_me_section.section_title = "Assigned to me"
+
+    def compose(self) -> ComposeResult:
+        """Compose the container with two MR subsections."""
+        with Vertical(id="mr-subsections"):
+            yield self.opened_by_me_section
+            yield self.assigned_to_me_section
+
+    def on_mount(self) -> None:
+        """Handle mount event - set initial layout based on size."""
+        self._update_layout()
+
+    def on_resize(self) -> None:
+        """Handle resize event - update layout based on new size."""
+        self._update_layout()
+
+    def _update_layout(self) -> None:
+        """Update layout direction based on container width.
+
+        Uses horizontal layout (columns) when wide, vertical layout (rows) when narrow.
+        """
+        subsections = self.query_one("#mr-subsections", Vertical)
+        width = self.size.width
+
+        if width < self.LAYOUT_THRESHOLD:
+            # Narrow terminal: use vertical layout (rows)
+            subsections.styles.layout = "vertical"
+            subsections.add_class("vertical")
+        else:
+            # Wide terminal: use horizontal layout (columns)
+            subsections.styles.layout = "horizontal"
+            subsections.remove_class("vertical")
+
+    def show_loading(self) -> None:
+        """Set both subsections to loading state."""
+        self.opened_by_me_section.show_loading()
+        self.assigned_to_me_section.show_loading()
+
+    def set_error(self, message: str) -> None:
+        """Set both subsections to error state.
+
+        Args:
+            message: The error message to display.
+        """
+        self.opened_by_me_section.set_error(message)
+        self.assigned_to_me_section.set_error(message)
+
+    def update_opened_by_me(self, merge_requests: list[MergeRequest]) -> None:
+        """Update the "Opened by me" subsection.
+
+        Args:
+            merge_requests: List of MRs authored by the current user.
+        """
+        self.opened_by_me_section.update_data(merge_requests)
+
+    def update_assigned_to_me(self, merge_requests: list[MergeRequest]) -> None:
+        """Update the "Assigned to me" subsection.
+
+        Args:
+            merge_requests: List of MRs assigned to the current user.
+        """
+        self.assigned_to_me_section.update_data(merge_requests)
+
+    def get_active_section(self, section_type: str) -> MergeRequestSection | None:
+        """Get one of the subsections by type.
+
+        Args:
+            section_type: Either "opened" or "assigned".
+
+        Returns:
+            The requested subsection, or None if invalid type.
+        """
+        if section_type == "opened":
+            return self.opened_by_me_section
+        elif section_type == "assigned":
+            return self.assigned_to_me_section
+        return None
+
+    def get_selected_url(self, section_type: str) -> str | None:
+        """Get the URL of the selected item in a subsection.
+
+        Args:
+            section_type: Either "opened" or "assigned".
+
+        Returns:
+            The URL of the selected MR, or None if no selection.
+        """
+        section = self.get_active_section(section_type)
+        if section:
+            return section.get_selected_url()
+        return None
+
+    def focus_section(self, section_type: str) -> None:
+        """Focus a specific subsection.
+
+        Args:
+            section_type: Either "opened" or "assigned".
+        """
+        section = self.get_active_section(section_type)
+        if section:
+            section.focus_table()
+
+    def select_next(self, section_type: str) -> None:
+        """Move selection down in a subsection.
+
+        Args:
+            section_type: Either "opened" or "assigned".
+        """
+        section = self.get_active_section(section_type)
+        if section:
+            section.select_next()
+
+    def select_previous(self, section_type: str) -> None:
+        """Move selection up in a subsection.
+
+        Args:
+            section_type: Either "opened" or "assigned".
+        """
+        section = self.get_active_section(section_type)
+        if section:
+            section.select_previous()
 
 
 class WorkItemSection(BaseSection):

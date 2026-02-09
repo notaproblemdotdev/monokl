@@ -29,21 +29,29 @@ class TestNavigation:
         async with app.run_test() as pilot:
             screen = pilot.app.screen
 
-            # Initial active section should be "mr"
+            # Initial active section should be "mr", subsection "assigned"
             assert screen.active_section == "mr"
+            assert screen.active_mr_subsection == "assigned"
+
+            # Press Tab to switch to "opened" subsection
+            await pilot.press("tab")
+            assert screen.active_section == "mr"
+            assert screen.active_mr_subsection == "opened"
 
             # Press Tab to switch to work section
             await pilot.press("tab")
             assert screen.active_section == "work"
 
-            # Press Tab again to switch back to mr
+            # Press Tab again to switch back to mr "assigned"
             await pilot.press("tab")
             assert screen.active_section == "mr"
+            assert screen.active_mr_subsection == "assigned"
 
     @pytest.mark.asyncio
     async def test_tab_updates_visual_indicator(self, app):
         """Test that Tab updates the visual border indicator."""
         async with app.run_test() as pilot:
+            screen = pilot.app.screen
             mr_container = pilot.app.query_one("#mr-container")
             work_container = pilot.app.query_one("#work-container")
 
@@ -51,9 +59,14 @@ class TestNavigation:
             assert "active" in mr_container.classes
             assert "active" not in work_container.classes
 
-            # Press Tab
+            # Press Tab to switch to "opened" subsection (still MR section active)
             await pilot.press("tab")
+            # MR section should still have 'active' class
+            assert "active" in mr_container.classes
+            assert "active" not in work_container.classes
 
+            # Press Tab to switch to work section
+            await pilot.press("tab")
             # Work section should now have 'active' class
             assert "active" not in mr_container.classes
             assert "active" in work_container.classes
@@ -93,25 +106,26 @@ class TestNavigation:
 
             screen = pilot.app.screen
 
-            # Ensure MR section has data
-            if screen.mr_section.state != "data":
+            # Ensure MR "assigned" subsection has data
+            assigned_section = screen.mr_container.assigned_to_me_section
+            if assigned_section.state != "data":
                 pytest.skip("MR section not in data state (CLI may not be available)")
 
-            # Get initial cursor position
-            initial_row = screen.mr_section._data_table.cursor_row
+            # Get initial cursor position from the active subsection
+            initial_row = assigned_section._data_table.cursor_row
 
             # Press down arrow
             await pilot.press("down")
 
             # Cursor should have moved (or stayed at bottom)
-            new_row = screen.mr_section._data_table.cursor_row
+            new_row = assigned_section._data_table.cursor_row
             assert new_row is not None
 
             # Press up arrow to go back
             await pilot.press("up")
 
             # Cursor should have moved back
-            final_row = screen.mr_section._data_table.cursor_row
+            final_row = assigned_section._data_table.cursor_row
             assert final_row is not None
 
     @pytest.mark.asyncio
@@ -149,25 +163,26 @@ class TestNavigation:
 
             screen = pilot.app.screen
 
-            # Ensure MR section has data
-            if screen.mr_section.state != "data":
+            # Ensure MR "assigned" subsection has data
+            assigned_section = screen.mr_container.assigned_to_me_section
+            if assigned_section.state != "data":
                 pytest.skip("MR section not in data state")
 
             # Get initial row
-            initial_row = screen.mr_section._data_table.cursor_row
+            initial_row = assigned_section._data_table.cursor_row
 
             # Press 'j' to move down
             await pilot.press("j")
 
             # Verify cursor moved
-            new_row = screen.mr_section._data_table.cursor_row
+            new_row = assigned_section._data_table.cursor_row
             assert new_row is not None
 
             # Press 'k' to move up
             await pilot.press("k")
 
             # Verify cursor moved
-            final_row = screen.mr_section._data_table.cursor_row
+            final_row = assigned_section._data_table.cursor_row
             assert final_row is not None
 
     @pytest.mark.asyncio
@@ -213,8 +228,9 @@ class TestNavigation:
 
             screen = pilot.app.screen
 
-            # Ensure MR section has data
-            if screen.mr_section.state != "data":
+            # Ensure MR "assigned" subsection has data
+            assigned_section = screen.mr_container.assigned_to_me_section
+            if assigned_section.state != "data":
                 pytest.skip("MR section not in data state")
 
             # Press 'o' to open selected item
