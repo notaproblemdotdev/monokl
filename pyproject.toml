@@ -12,6 +12,8 @@ dependencies = [
     "pydantic>=2.12.5",
     "structlog>=24.1.0",
     "pyyaml>=6.0.0",
+    "textual-web>=0.4.2",
+    "textual-dev>=1.8.0",
 ]
 
 [project.scripts]
@@ -75,5 +77,6 @@ build-backend = "uv_build"
 
 [dependency-groups]
 dev = [
+    "pytest-textual-snapshot>=1.0.0",
     "ty>=0.0.15",
 ]
