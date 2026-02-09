@@ -332,7 +332,9 @@ class MergeRequestSection(BaseSection):
 
             # The row key is the URL we stored when adding the row
             row_key = row_keys[row_index]
-            if isinstance(row_key, str):
+            if hasattr(row_key, "value"):
+                return str(row_key.value)
+            elif isinstance(row_key, str):
                 return row_key
 
             # Fallback: try to get row data and find MR
@@ -395,8 +397,8 @@ class MergeRequestContainer(Static):
     def compose(self) -> ComposeResult:
         """Compose the container with two MR subsections."""
         with Vertical(id="mr-subsections"):
-            yield self.opened_by_me_section
             yield self.assigned_to_me_section
+            yield self.opened_by_me_section
 
     def on_mount(self) -> None:
         """Handle mount event - set initial layout based on size."""
