@@ -56,9 +56,12 @@ async def test_fetch_assigned_items_success(jira_adapter, sample_jira_issue, sam
     mock_issues = [sample_jira_issue, sample_jira_issue2]
     mock_output = json.dumps(mock_issues)
 
-    with patch("shutil.which", return_value="/usr/local/bin/acli"), patch(
-        "asyncio.create_subprocess_exec",
-        return_value=create_mock_process(mock_output, 0),
+    with (
+        patch("shutil.which", return_value="/usr/local/bin/acli"),
+        patch(
+            "asyncio.create_subprocess_exec",
+            return_value=create_mock_process(mock_output, 0),
+        ),
     ):
         issues = await jira_adapter.fetch_assigned_items()
 
@@ -90,9 +93,12 @@ async def test_fetch_assigned_items_empty(jira_adapter):
     """Test fetching with empty result returns empty list."""
     mock_output = json.dumps([])
 
-    with patch("shutil.which", return_value="/usr/local/bin/acli"), patch(
-        "asyncio.create_subprocess_exec",
-        return_value=create_mock_process(mock_output, 0),
+    with (
+        patch("shutil.which", return_value="/usr/local/bin/acli"),
+        patch(
+            "asyncio.create_subprocess_exec",
+            return_value=create_mock_process(mock_output, 0),
+        ),
     ):
         issues = await jira_adapter.fetch_assigned_items()
 
@@ -114,10 +120,14 @@ async def test_fetch_assigned_items_auth_failure(jira_adapter):
     """Test fetching when not authenticated raises CLIAuthError."""
     mock_stderr = "Error: Not authenticated. Please run 'acli login'"
 
-    with patch("shutil.which", return_value="/usr/local/bin/acli"), patch(
-        "asyncio.create_subprocess_exec",
-        return_value=create_mock_process("", 1, mock_stderr),
-    ), pytest.raises(CLIAuthError) as exc_info:
+    with (
+        patch("shutil.which", return_value="/usr/local/bin/acli"),
+        patch(
+            "asyncio.create_subprocess_exec",
+            return_value=create_mock_process("", 1, mock_stderr),
+        ),
+        pytest.raises(CLIAuthError) as exc_info,
+    ):
         await jira_adapter.fetch_assigned_items()
 
     # Verify it's a CLIAuthError with the auth error message attribute
@@ -131,9 +141,12 @@ async def test_check_auth_success(jira_adapter):
     """Test check_auth returns True when authenticated."""
     mock_output = "john.doe@example.com"
 
-    with patch("shutil.which", return_value="/usr/local/bin/acli"), patch(
-        "asyncio.create_subprocess_exec",
-        return_value=create_mock_process(mock_output, 0),
+    with (
+        patch("shutil.which", return_value="/usr/local/bin/acli"),
+        patch(
+            "asyncio.create_subprocess_exec",
+            return_value=create_mock_process(mock_output, 0),
+        ),
     ):
         result = await jira_adapter.check_auth()
 
@@ -145,9 +158,12 @@ async def test_check_auth_failure(jira_adapter):
     """Test check_auth returns False when not authenticated."""
     mock_stderr = "Error: Not authenticated"
 
-    with patch("shutil.which", return_value="/usr/local/bin/acli"), patch(
-        "asyncio.create_subprocess_exec",
-        return_value=create_mock_process("", 1, mock_stderr),
+    with (
+        patch("shutil.which", return_value="/usr/local/bin/acli"),
+        patch(
+            "asyncio.create_subprocess_exec",
+            return_value=create_mock_process("", 1, mock_stderr),
+        ),
     ):
         result = await jira_adapter.check_auth()
 
@@ -168,10 +184,13 @@ async def test_fetch_with_custom_filters(jira_adapter, sample_jira_issue):
     """Test fetching with custom status and assignee filters."""
     mock_output = json.dumps([sample_jira_issue])
 
-    with patch("shutil.which", return_value="/usr/local/bin/acli"), patch(
-        "asyncio.create_subprocess_exec",
-        return_value=create_mock_process(mock_output, 0),
-    ) as mock_exec:
+    with (
+        patch("shutil.which", return_value="/usr/local/bin/acli"),
+        patch(
+            "asyncio.create_subprocess_exec",
+            return_value=create_mock_process(mock_output, 0),
+        ) as mock_exec,
+    ):
         issues = await jira_adapter.fetch_assigned_items(
             status_filter="In Progress",
             assignee="john.doe",

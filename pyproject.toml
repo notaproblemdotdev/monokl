@@ -81,5 +81,6 @@ build-backend = "uv_build"
 [dependency-groups]
 dev = [
     "pytest-textual-snapshot>=1.0.0",
+    "ruff>=0.15.1",
     "ty>=0.0.15",
 ]

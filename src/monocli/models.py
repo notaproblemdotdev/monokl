@@ -54,8 +54,8 @@ class PieceOfWork(Protocol):
     """
 
     # Adapter metadata
-    adapter_icon: str
-    adapter_type: str
+    piece_icon: str
+    piece_type: str
 
     # Core properties
     @property

@@ -624,7 +624,7 @@ class PieceOfWorkSection(BaseSection):
         added_count = 0
         for item in work_items:
             try:
-                icon = item.adapter_icon
+                icon = item.piece_icon
                 key = item.display_key()
                 title = self._truncate_title(item.title)
                 status = item.display_status()

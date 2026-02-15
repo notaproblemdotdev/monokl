@@ -5,7 +5,6 @@ arrow keys, browser opening, and section-scoped selection using
 Textual's Pilot API.
 """
 
-
 import pytest
 
 from monocli.ui.app import MonoApp

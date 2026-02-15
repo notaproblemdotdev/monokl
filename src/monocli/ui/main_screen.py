@@ -15,7 +15,8 @@ Features:
 from __future__ import annotations
 
 import asyncio
-from typing import TYPE_CHECKING
+import webbrowser
+from typing import TYPE_CHECKING, Any
 
 from textual.app import ComposeResult
 from textual.containers import Vertical
@@ -23,6 +24,20 @@ from textual.reactive import reactive
 from textual.screen import Screen
 from textual.widgets import Label
 
+from monocli import __version__, get_logger
+from monocli.adapters.jira import JiraAdapter
+from monocli.adapters.todoist import TodoistAdapter
+from monocli.config import ConfigError, get_config
+from monocli.db.cache import CacheManager
+from monocli.db.connection import get_db_manager
+from monocli.db.preferences import PreferencesManager
+from monocli.models import CodeReview, WorkItem
+from monocli.sources import (
+    CodeReviewSource,
+    GitHubSource,
+    GitLabCodeReviewSource,
+    SourceRegistry,
+)
 from monocli.ui.sections import CodeReviewSection, PieceOfWorkSection
 from monocli.ui.topbar import TopBar
 
@@ -142,8 +157,6 @@ class MainScreen(Screen):
 
     def compose(self) -> ComposeResult:
         """Compose the main screen with two sections."""
-        from monocli import __version__
-
         with Vertical(id="sections-container"):
             # App title above the code reviews section
             yield TopBar(version=__version__, id="topbar")
@@ -167,10 +180,6 @@ class MainScreen(Screen):
         2. Load cached data from DB immediately (for fast startup)
         3. Start background worker to fetch fresh data from CLIs
         """
-        from monocli.config import get_config
-        from monocli.db.cache import CacheManager
-        from monocli.db.connection import get_db_manager
-        from monocli.db.preferences import PreferencesManager
 
         # Initialize database
         db = get_db_manager()
@@ -220,8 +229,6 @@ class MainScreen(Screen):
         This provides fast startup by showing cached data immediately,
         while fresh data is fetched in the background.
         """
-        from monocli import get_logger
-
         logger = get_logger(__name__)
         logger.info("Loading cached data from database")
 
@@ -275,8 +282,6 @@ class MainScreen(Screen):
         Uses asyncio.gather() to run fetches in parallel.
         Updates the UI with fresh data when complete.
         """
-        from monocli import get_logger
-
         logger = get_logger(__name__)
         logger.info("Starting background fetch from CLI sources")
 
@@ -290,8 +295,6 @@ class MainScreen(Screen):
 
     def _convert_mr_to_code_review(self, mr):
         """Convert a MergeRequest model to a CodeReview model."""
-        from monocli.models import CodeReview
-
         author = mr.author.get("name") or mr.author.get("username") or "Unknown"
         return CodeReview(
             id=str(mr.iid),
@@ -314,12 +317,6 @@ class MainScreen(Screen):
         Cached data is loaded separately in _load_cached_data() for fast startup.
         Falls back to stale cache if API fails.
         """
-        from monocli import get_logger
-        from monocli.config import ConfigError, get_config
-        from monocli.sources import SourceRegistry
-        from monocli.sources.github import GitHubSource
-        from monocli.sources.gitlab import GitLabCodeReviewSource
-
         logger = get_logger(__name__)
 
         config = get_config()
@@ -329,16 +326,28 @@ class MainScreen(Screen):
             logger.info("Offline mode enabled, skipping CLI fetch for code reviews")
             return
 
+        try:
+            gitlab_source_args: dict[str, Any] = {"group": get_config().require_gitlab_group()}
+            gitlab_source_mapping: dict[type[GitLabCodeReviewSource], dict[str, Any] | None] = {
+                GitLabCodeReviewSource: gitlab_source_args
+            }
+        except ConfigError:
+            logger.warning("GitLab group not configured, skipping GitLab source")
+            gitlab_source_mapping = {}
+
+        code_review_sources_mapping: dict[type[CodeReviewSource], dict[str, Any] | None] = {
+            GitHubSource: None,
+            **gitlab_source_mapping,
+        }
+
         registry = SourceRegistry()
 
-        # Register code review sources
-        try:
-            group = config.require_gitlab_group()
-            registry.register_code_review_source(GitLabCodeReviewSource(group=group))
-        except ConfigError:
-            logger.debug("GitLab group not configured, skipping GitLab source")
-
-        registry.register_code_review_source(GitHubSource())
+        for source_cls, init_args in code_review_sources_mapping.items():
+            try:
+                source = source_cls(**init_args) if init_args is not None else source_cls()
+                registry.register_code_review_source(source)
+            except Exception as e:
+                logger.warning(f"Failed to initialize source {source_cls.__name__}", error=str(e))
 
         # Fetch fresh data from CLIs
         self.mr_loading = True
@@ -412,11 +421,6 @@ class MainScreen(Screen):
         Cached data is loaded separately in _load_cached_data() for fast startup.
         Falls back to stale cache if APIs fail.
         """
-        from monocli import get_logger
-        from monocli.adapters.jira import JiraAdapter
-        from monocli.adapters.todoist import TodoistAdapter
-        from monocli.config import get_config
-        from monocli.models import WorkItem
 
         logger = get_logger(__name__)
 
@@ -552,8 +556,6 @@ class MainScreen(Screen):
         Opens the URL of the currently selected row in the
         active section's DataTable.
         """
-        import webbrowser
-
         url: str | None = None
 
         if self.active_section == "mr":
