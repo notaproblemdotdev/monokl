@@ -8,9 +8,10 @@ from contextlib import suppress
 from datetime import datetime
 
 from monocli import get_logger
-from monocli.async_utils import CLIAdapter
 from monocli.models import CodeReview, PieceOfWork
 from monocli.sources.base import CodeReviewSource, PieceOfWorkSource
+
+from ._cli import GitHubAdapter
 
 logger = get_logger(__name__)
 
@@ -35,7 +36,7 @@ class GitHubSource(CodeReviewSource, PieceOfWorkSource):
 
     def __init__(self) -> None:
         """Initialize the GitHub source."""
-        self._adapter = CLIAdapter("gh")
+        self._adapter = GitHubAdapter()
 
     @property
     def source_type(self) -> str:
@@ -53,11 +54,7 @@ class GitHubSource(CodeReviewSource, PieceOfWorkSource):
 
     async def check_auth(self) -> bool:
         """Check if gh is authenticated."""
-        try:
-            await self._adapter.run(["auth", "status"], check=True, timeout=5.0)
-            return True
-        except Exception:
-            return False
+        return await self._adapter.check_auth()
 
     async def fetch_assigned(self) -> list[CodeReview]:
         """Fetch PRs assigned to the current user.
@@ -66,19 +63,8 @@ class GitHubSource(CodeReviewSource, PieceOfWorkSource):
             List of CodeReview items (PRs) assigned to the user.
         """
         logger.info("Fetching assigned GitHub PRs")
-        args = [
-            "pr",
-            "list",
-            "--assignee",
-            "@me",
-            "--state",
-            "open",
-            "--json",
-            "number,title,state,author,url,createdAt,draft,headRefName",
-        ]
-
         try:
-            data = await self._adapter.fetch_json(args)
+            data = await self._adapter.fetch_assigned_prs()
             return [self._convert_pr_to_code_review(pr) for pr in data]
         except Exception as e:
             logger.warning("Failed to fetch assigned GitHub PRs", error=str(e))
@@ -91,19 +77,8 @@ class GitHubSource(CodeReviewSource, PieceOfWorkSource):
             List of CodeReview items (PRs) authored by the user.
         """
         logger.info("Fetching authored GitHub PRs")
-        args = [
-            "pr",
-            "list",
-            "--author",
-            "@me",
-            "--state",
-            "open",
-            "--json",
-            "number,title,state,author,url,createdAt,draft,headRefName",
-        ]
-
         try:
-            data = await self._adapter.fetch_json(args)
+            data = await self._adapter.fetch_authored_prs()
             return [self._convert_pr_to_code_review(pr) for pr in data]
         except Exception as e:
             logger.warning("Failed to fetch authored GitHub PRs", error=str(e))
@@ -116,20 +91,8 @@ class GitHubSource(CodeReviewSource, PieceOfWorkSource):
             List of CodeReview items (PRs) pending user's review.
         """
         logger.info("Fetching pending review GitHub PRs")
-        # GitHub CLI doesn't have a direct "review requested" filter
-        # We'll use search with review-requested qualifier
-        args = [
-            "search",
-            "prs",
-            "--",
-            "review-requested:@me",
-            "state:open",
-            "--json",
-            "number,title,state,author,url,createdAt,draft,headRefName",
-        ]
-
         try:
-            data = await self._adapter.fetch_json(args)
+            data = await self._adapter.fetch_pending_review_prs()
             return [self._convert_pr_to_code_review(pr) for pr in data]
         except Exception as e:
             logger.warning("Failed to fetch pending review GitHub PRs", error=str(e))
@@ -142,19 +105,8 @@ class GitHubSource(CodeReviewSource, PieceOfWorkSource):
             List of PieceOfWork items (issues) assigned to the user.
         """
         logger.info("Fetching assigned GitHub issues")
-        args = [
-            "issue",
-            "list",
-            "--assignee",
-            "@me",
-            "--state",
-            "open",
-            "--json",
-            "number,title,state,author,url,createdAt,labels,assignees",
-        ]
-
         try:
-            data = await self._adapter.fetch_json(args)
+            data = await self._adapter.fetch_assigned_issues()
             return [self._convert_issue_to_piece_of_work(issue) for issue in data]
         except Exception as e:
             logger.warning("Failed to fetch GitHub issues", error=str(e))
