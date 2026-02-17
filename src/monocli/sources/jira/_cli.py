@@ -6,7 +6,8 @@ assigned to the current user.
 
 from monocli import get_logger
 from monocli.async_utils import CLIAdapter
-from monocli.exceptions import CLIAuthError, CLINotFoundError
+from monocli.exceptions import CLIAuthError
+from monocli.exceptions import CLINotFoundError
 from monocli.models import JiraWorkItem
 
 logger = get_logger(__name__)
@@ -19,7 +20,7 @@ class JiraAdapter(CLIAdapter):
     them into Pydantic JiraWorkItem models.
 
     Example:
-        adapter = JiraAdapter()
+        adapter = JiraAdapter(base_url="https://company.atlassian.net")
 
         # Check if acli is available
         if adapter.is_available():
@@ -32,9 +33,14 @@ class JiraAdapter(CLIAdapter):
         is_authenticated = await adapter.check_auth()
     """
 
-    def __init__(self) -> None:
-        """Initialize Jira adapter with cli_name='acli'."""
+    def __init__(self, base_url: str) -> None:
+        """Initialize Jira adapter with base URL.
+
+        Args:
+            base_url: Jira base URL (e.g., "https://company.atlassian.net")
+        """
         super().__init__("acli")
+        self.base_url = base_url.rstrip("/")
 
     async def fetch_assigned_items(
         self,
@@ -58,7 +64,7 @@ class JiraAdapter(CLIAdapter):
             CLIAuthError: If acli is not authenticated
 
         Example:
-            adapter = JiraAdapter()
+            adapter = JiraAdapter(base_url="https://company.atlassian.net")
 
             # Fetch all issues not done assigned to current user
             issues = await adapter.fetch_assigned_items()
@@ -76,9 +82,11 @@ class JiraAdapter(CLIAdapter):
             "--json",
         ]
         try:
-            result = await self.fetch_and_parse(args, JiraWorkItem)
-            logger.info("Fetched Jira work items", count=len(result))
-            return result
+            items = await self.fetch_and_parse(args, JiraWorkItem)
+            for item in items:
+                item.base_url = self.base_url
+            logger.info("Fetched Jira work items", count=len(items))
+            return items
         except (CLIAuthError, CLINotFoundError):
             logger.warning("Failed to fetch Jira work items")
             raise
@@ -93,7 +101,7 @@ class JiraAdapter(CLIAdapter):
             True if acli is authenticated, False otherwise
 
         Example:
-            adapter = JiraAdapter()
+            adapter = JiraAdapter(base_url="https://company.atlassian.net")
 
             if await adapter.check_auth():
                 issues = await adapter.fetch_assigned_items()

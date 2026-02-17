@@ -38,9 +38,7 @@ def create_work_store(config: Config) -> WorkStore:
         store = create_work_store(config)
         result = await store.get_code_reviews("assigned")
     """
-    from monocli.sources import (
-        SourceRegistry,
-    )
+    from monocli.sources import SourceRegistry
 
     registry = SourceRegistry()
 
@@ -62,7 +60,7 @@ def _register_code_review_sources(registry: SourceRegistry, config: Config) -> N
 
 def _register_work_sources(registry: SourceRegistry, config: Config) -> None:
     """Register all configured work item sources."""
-    _register_jira(registry)
+    _register_jira(registry, config)
     _register_todoist(registry, config)
 
 
@@ -94,14 +92,18 @@ def _register_github(registry: SourceRegistry) -> None:
         logger.warning("Failed to initialize GitHub source", error=str(e))
 
 
-def _register_jira(registry: SourceRegistry) -> None:
-    """Register Jira source."""
+def _register_jira(registry: SourceRegistry, config: Config) -> None:
+    """Register Jira source if configured."""
+    from monocli.config import ConfigError
     from monocli.sources import JiraSource
 
     try:
-        jira_source = JiraSource()
+        base_url = config.require_jira_base_url()
+        jira_source = JiraSource(base_url=base_url)
         registry.register_piece_of_work_source(jira_source)
         logger.debug("Registered Jira source")
+    except ConfigError:
+        logger.debug("Jira not configured, skipping")
     except Exception as e:
         logger.warning("Failed to initialize Jira source", error=str(e))
 

@@ -398,6 +398,7 @@ class JiraPieceOfWork(BaseModel):
         description="Issue fields including summary, status, priority",
     )
     self: HttpUrl = Field(..., description="Issue API URL")
+    base_url: str | None = Field(None, description="Jira base URL for constructing browse URLs")
 
     @property
     def id(self) -> str:
@@ -449,7 +450,8 @@ class JiraPieceOfWork(BaseModel):
     @property
     def url(self) -> str:
         """Get the browser URL for this issue."""
-        # Convert API URL to browser URL (handles v2, v3, etc.)
+        if self.base_url:
+            return f"{self.base_url.rstrip('/')}/browse/{self.key}"
         url_str = str(self.self)
         return re.sub(r"/rest/api/\d+/issue/", "/browse/", url_str).rstrip("/")
 

@@ -19,7 +19,7 @@ class JiraSource(PieceOfWorkSource):
     Wraps the existing JiraAdapter to provide PieceOfWork items.
 
     Example:
-        source = JiraSource()
+        source = JiraSource(base_url="https://company.atlassian.net")
 
         # Check if available
         if await source.is_available():
@@ -29,9 +29,13 @@ class JiraSource(PieceOfWorkSource):
                 print(f"{item.display_key()}: {item.title}")
     """
 
-    def __init__(self) -> None:
-        """Initialize the Jira piece of work source."""
-        self._adapter = JiraAdapter()
+    def __init__(self, base_url: str) -> None:
+        """Initialize the Jira piece of work source.
+
+        Args:
+            base_url: Jira base URL (e.g., "https://company.atlassian.net")
+        """
+        self._adapter = JiraAdapter(base_url)
 
     @property
     def source_type(self) -> str:

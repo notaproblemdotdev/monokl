@@ -12,7 +12,8 @@ from typing import Any
 
 import yaml
 
-from monocli import get_logger, keyring_utils
+from monocli import get_logger
+from monocli import keyring_utils
 
 logger = get_logger(__name__)
 
@@ -36,7 +37,6 @@ DEFAULT_CACHE_CLEANUP_DAYS = 30
 class ConfigError(Exception):
     """Raised when configuration is invalid or missing."""
 
-    pass
 
 
 class Config:
@@ -148,6 +148,9 @@ class Config:
         jira_project = os.getenv("MONOCLI_JIRA_PROJECT")
         if jira_project:
             data["jira"]["project"] = jira_project
+        jira_base_url = os.getenv("MONOCLI_JIRA_BASE_URL")
+        if jira_base_url:
+            data["jira"]["base_url"] = jira_base_url
 
         # Todoist settings
         todoist_token = os.getenv("MONOCLI_TODOIST_TOKEN")
@@ -185,6 +188,15 @@ class Config:
             Jira project key or None if not configured.
         """
         return self._data.get("jira", {}).get("project")
+
+    @property
+    def jira_base_url(self) -> str | None:
+        """Get the configured Jira base URL.
+
+        Returns:
+            Jira base URL (e.g., "https://company.atlassian.net") or None.
+        """
+        return self._data.get("jira", {}).get("base_url")
 
     @property
     def todoist_token(self) -> str | None:
@@ -323,6 +335,28 @@ class Config:
                 "    group: your-group"
             )
         return group
+
+    def require_jira_base_url(self) -> str:
+        """Get Jira base URL, raising error if not configured.
+
+        Returns:
+            Jira base URL (e.g., "https://company.atlassian.net").
+
+        Raises:
+            ConfigError: If base URL is not configured.
+        """
+        base_url = self.jira_base_url
+        if not base_url:
+            raise ConfigError(
+                "Jira base URL not configured.\n"
+                "\nSet one of:\n"
+                "  - Environment variable: export MONOCLI_JIRA_BASE_URL='https://your-company.atlassian.net'\n"
+                "  - Config file: ~/.config/monocli/config.yaml\n"
+                "\nConfig file format:\n"
+                "  jira:\n"
+                "    base_url: https://your-company.atlassian.net"
+            )
+        return base_url
 
     def _migrate_todoist_token_to_keyring(self, token: str) -> None:
         """Migrate plaintext token to keyring and remove from config file.

@@ -17,7 +17,7 @@ from monocli.models import JiraWorkItem
 @pytest.fixture
 def jira_adapter():
     """Create a JiraAdapter instance for testing."""
-    return JiraAdapter()
+    return JiraAdapter(base_url="https://company.atlassian.net")
 
 
 @pytest.fixture
