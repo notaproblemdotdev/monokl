@@ -8,75 +8,42 @@ from __future__ import annotations
 import aiosqlite
 
 # Current schema version
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 
 # Schema creation SQL
 SCHEMA_SQL = """
--- Cache metadata table
-CREATE TABLE IF NOT EXISTS cache_metadata (
-    key TEXT PRIMARY KEY,
-    last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    ttl_seconds INTEGER DEFAULT 300,
+-- Schema version tracking
+CREATE TABLE IF NOT EXISTS schema_version (
+    version INTEGER PRIMARY KEY,
+    applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Unified cache table with source granularity (v2)
+CREATE TABLE IF NOT EXISTS cached_data (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    cache_key TEXT NOT NULL,
+    data_type TEXT NOT NULL,
+    source TEXT NOT NULL,
+    subsection TEXT,
+    raw_json TEXT NOT NULL,
+    cached_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    ttl_seconds INTEGER NOT NULL,
     fetch_count INTEGER DEFAULT 0,
-    last_error TEXT
+    last_error TEXT,
+    UNIQUE(cache_key)
 );
 
--- Merge requests cache table
-CREATE TABLE IF NOT EXISTS merge_requests (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    iid INTEGER NOT NULL,
-    title TEXT NOT NULL,
-    state TEXT NOT NULL,
-    author_login TEXT,
-    author_name TEXT,
-    web_url TEXT NOT NULL,
-    source_branch TEXT,
-    target_branch TEXT,
-    created_at TIMESTAMP,
-    draft INTEGER DEFAULT 0,
-    description TEXT,
-    raw_json TEXT NOT NULL,
-    cached_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    subsection TEXT NOT NULL,
-    UNIQUE(iid, subsection)
-);
-
--- Index for faster queries by subsection
-CREATE INDEX IF NOT EXISTS idx_mr_subsection ON merge_requests(subsection);
-CREATE INDEX IF NOT EXISTS idx_mr_cached_at ON merge_requests(cached_at);
-
--- Work items cache table
-CREATE TABLE IF NOT EXISTS work_items (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    external_id TEXT NOT NULL UNIQUE,
-    adapter_type TEXT NOT NULL,
-    title TEXT NOT NULL,
-    status TEXT NOT NULL,
-    url TEXT NOT NULL,
-    priority TEXT,
-    assignee TEXT,
-    created_at TIMESTAMP,
-    raw_json TEXT NOT NULL,
-    cached_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    is_completed INTEGER DEFAULT 0
-);
-
--- Indexes for work items
-CREATE INDEX IF NOT EXISTS idx_wi_adapter_type ON work_items(adapter_type);
-CREATE INDEX IF NOT EXISTS idx_wi_cached_at ON work_items(cached_at);
-CREATE INDEX IF NOT EXISTS idx_wi_is_completed ON work_items(is_completed);
+-- Indexes for cached_data
+CREATE INDEX IF NOT EXISTS idx_cached_data_key ON cached_data(cache_key);
+CREATE INDEX IF NOT EXISTS idx_cached_data_type ON cached_data(data_type);
+CREATE INDEX IF NOT EXISTS idx_cached_data_source ON cached_data(source);
+CREATE INDEX IF NOT EXISTS idx_cached_data_cached_at ON cached_data(cached_at);
 
 -- User preferences table
 CREATE TABLE IF NOT EXISTS user_preferences (
     key TEXT PRIMARY KEY,
     value TEXT NOT NULL,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Schema version tracking
-CREATE TABLE IF NOT EXISTS schema_version (
-    version INTEGER PRIMARY KEY,
-    applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 """
 
@@ -112,10 +79,42 @@ async def migrate_schema(conn: aiosqlite.Connection, from_version: int, to_versi
         from_version: Current schema version.
         to_version: Target schema version.
     """
-    # Future migrations go here
-    # Example:
-    # if from_version < 2:
-    #     await conn.execute("ALTER TABLE ...")
+    if from_version < 2:
+        # Migration v1 -> v2: Drop old cache tables, create new unified cache
+        await conn.execute("DROP TABLE IF EXISTS cache_metadata")
+        await conn.execute("DROP TABLE IF EXISTS merge_requests")
+        await conn.execute("DROP TABLE IF EXISTS work_items")
+
+        # Create new unified cache table
+        await conn.execute("""
+            CREATE TABLE IF NOT EXISTS cached_data (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                cache_key TEXT NOT NULL,
+                data_type TEXT NOT NULL,
+                source TEXT NOT NULL,
+                subsection TEXT,
+                raw_json TEXT NOT NULL,
+                cached_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                ttl_seconds INTEGER NOT NULL,
+                fetch_count INTEGER DEFAULT 0,
+                last_error TEXT,
+                UNIQUE(cache_key)
+            )
+        """)
+
+        # Create indexes
+        await conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_cached_data_key ON cached_data(cache_key)"
+        )
+        await conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_cached_data_type ON cached_data(data_type)"
+        )
+        await conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_cached_data_source ON cached_data(source)"
+        )
+        await conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_cached_data_cached_at ON cached_data(cached_at)"
+        )
 
     # Update schema version
     await conn.execute("INSERT OR REPLACE INTO schema_version (version) VALUES (?)", (to_version,))

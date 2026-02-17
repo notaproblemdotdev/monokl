@@ -3,15 +3,16 @@
 import asyncio
 import json
 import shutil
+import typing as t
+
 from collections.abc import Callable
-from typing import Any, TypeVar, cast
 
 from pydantic import BaseModel
 from textual.worker import Worker
 
 from monocli.exceptions import CLINotFoundError, raise_for_error
 
-T = TypeVar("T", bound=BaseModel)
+T = t.TypeVar("T", bound=BaseModel)
 
 # Semaphore to prevent race conditions in concurrent subprocess execution
 # Limit to 3 concurrent subprocesses to avoid transport cleanup issues
@@ -110,7 +111,7 @@ async def run_cli_command(
 
 
 def fetch_with_worker(
-    widget: Any, fetch_func: Callable[..., Any], *args: Any, **kwargs: Any
+    widget: t.Any, fetch_func: Callable[..., t.Any], *args: t.Any, **kwargs: t.Any
 ) -> Worker:
     """Start a Textual Worker for fetching data with exclusive=True.
 
@@ -136,11 +137,11 @@ def fetch_with_worker(
     """
     from textual.worker import Worker
 
-    async def _exclusive_fetch() -> Any:
+    async def _exclusive_fetch() -> t.Any:
         return await fetch_func(*args, **kwargs)
 
-    return cast(
-        Worker[Any],
+    return t.cast(
+        Worker[t.Any],
         widget.run_worker(
             _exclusive_fetch,
             exclusive=True,  # Prevents race conditions
@@ -162,7 +163,7 @@ class CLIAdapter:
             self._available = shutil.which(self.cli_name) is not None
         return self._available
 
-    async def run(self, args: list[str], **kwargs: Any) -> tuple[str, str]:
+    async def run(self, args: list[str], **kwargs: t.Any) -> tuple[str, str]:
         """Run CLI with given arguments.
 
         Returns:
@@ -170,7 +171,7 @@ class CLIAdapter:
         """
         return await run_cli_command([self.cli_name] + args, **kwargs)
 
-    async def fetch_json(self, args: list[str], **kwargs: Any) -> Any:
+    async def fetch_json(self, args: list[str], **kwargs: t.Any) -> t.Any:
         """Run CLI command and parse JSON output from stdout.
 
         Args:
@@ -186,7 +187,7 @@ class CLIAdapter:
         return json.loads(stdout)
 
     async def fetch_and_parse(
-        self, args: list[str], model_class: type[T], **kwargs: Any
+        self, args: list[str], model_class: type[T], **kwargs: t.Any
     ) -> list[T]:
         """Run CLI command, parse JSON, and validate into Pydantic models.
 

@@ -6,9 +6,11 @@ gh (GitHub), glab (GitLab), and acli (Jira).
 
 from __future__ import annotations
 
+import typing as t
+
 from datetime import datetime
 from enum import Enum
-from typing import Annotated, Any, Protocol, runtime_checkable
+from typing_extensions import TypedDict
 
 from pydantic import BaseModel, BeforeValidator, ConfigDict, Field, HttpUrl
 from typing_extensions import TypedDict
@@ -29,7 +31,7 @@ def parse_datetime(value: datetime | str | None) -> datetime | None:
 
 
 # Type alias for datetime fields that accept ISO 8601 strings
-IsoDateTime = Annotated[datetime | None, BeforeValidator(parse_datetime)]
+IsoDateTime = t.Annotated[datetime | None, BeforeValidator(parse_datetime)]
 
 
 class DueInfo(TypedDict, total=False):
@@ -45,8 +47,8 @@ class DueInfo(TypedDict, total=False):
     timezone: str | None
 
 
-@runtime_checkable
-class PieceOfWork(Protocol):
+@t.runtime_checkable
+class PieceOfWork(t.Protocol):
     """Protocol for all work items across platforms.
 
     Unifies Jira issues, GitHub issues, GitLab tasks, Linear issues, and Todoist tasks
@@ -184,7 +186,7 @@ class PullRequest(BaseModel):
         description="Pull request state",
         pattern=r"^(open|closed|merged)$",
     )
-    author: dict[str, Any] = Field(
+    author: dict[str, t.Any] = Field(
         ...,
         description="Author information with 'login' key",
     )
@@ -236,7 +238,7 @@ class MergeRequest(BaseModel):
         description="Merge request state",
         pattern=r"^(opened|closed|merged|locked)$",
     )
-    author: dict[str, Any] = Field(
+    author: dict[str, t.Any] = Field(
         ...,
         description="Author information with 'name' and 'username' keys",
     )
@@ -292,7 +294,7 @@ class GitHubPieceOfWork(BaseModel):
         description="Issue state",
         pattern=r"^(open|closed)$",
     )
-    author: dict[str, Any] = Field(
+    author: dict[str, t.Any] = Field(
         ...,
         description="Author information with 'login' key",
     )
@@ -306,7 +308,7 @@ class GitHubPieceOfWork(BaseModel):
         description="When the issue was created (ISO 8601 format)",
     )
     body: str | None = Field(default=None, description="Issue description")
-    assignees: list[dict[str, Any]] = Field(
+    assignees: list[dict[str, t.Any]] = Field(
         default_factory=list,
         description="List of assignee information",
     )
@@ -388,7 +390,7 @@ class JiraPieceOfWork(BaseModel):
         pattern=r"^[A-Z][A-Z0-9]*-\d+$",
         min_length=3,
     )
-    fields: dict[str, Any] = Field(
+    fields: dict[str, t.Any] = Field(
         ...,
         description="Issue fields including summary, status, priority",
     )

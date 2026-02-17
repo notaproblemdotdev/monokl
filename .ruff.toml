@@ -9,6 +9,7 @@ extend-ignore = []
 
 [lint.extend-per-file-ignores]
 "**/test_*.py" = ["S101", "D103", "ANN", "PLR2004"]
+"hello.py" = ["T201"]
 
 [lint.flake8-import-conventions]
 banned-from = ["typing"]

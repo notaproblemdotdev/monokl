@@ -11,7 +11,7 @@ import sys
 from monocli import __version__, configure_logging, get_logger
 from monocli.config import ConfigError, validate_keyring_available
 from monocli.db.connection import DatabaseManager
-from monocli.db.cache import CacheManager
+from monocli.db.work_store import WorkStore
 from monocli.ui.app import MonoApp
 
 
@@ -24,8 +24,12 @@ async def clear_cache_command(db_path: str | None = None) -> None:
 
     db = DatabaseManager(db_path)
     async with db:
-        cache = CacheManager()
-        await cache.invalidate("all")
+        # Create a minimal WorkStore just to invalidate cache
+        # Source registry not needed for invalidation
+        from monocli.sources.registry import SourceRegistry
+
+        store = WorkStore(SourceRegistry())
+        await store.invalidate()
         print("Cache cleared successfully.")
 
 

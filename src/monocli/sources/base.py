@@ -5,15 +5,17 @@ Provides Source protocols and base implementations for CLI and API-based sources
 
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Protocol, runtime_checkable
+import typing as t
+from abc import ABC
+from abc import abstractmethod
 
-if TYPE_CHECKING:
-    from monocli.models import CodeReview, PieceOfWork
+if t.TYPE_CHECKING:
+    from monocli.models import CodeReview
+    from monocli.models import PieceOfWork
 
 
-@runtime_checkable
-class Source(Protocol):
+@t.runtime_checkable
+class Source(t.Protocol):
     """Base protocol for all data sources.
 
     All sources must implement availability checking and authentication.
@@ -38,8 +40,8 @@ class Source(Protocol):
         ...
 
 
-@runtime_checkable
-class PieceOfWorkSource(Source, Protocol):
+@t.runtime_checkable
+class PieceOfWorkSource(Source, t.Protocol):
     """Protocol for sources that provide work items (issues, tasks).
 
     Implemented by Jira, Todoist, GitHub Issues, GitLab Issues, Linear, etc.
@@ -54,8 +56,8 @@ class PieceOfWorkSource(Source, Protocol):
         ...
 
 
-@runtime_checkable
-class CodeReviewSource(Source, Protocol):
+@t.runtime_checkable
+class CodeReviewSource(Source, t.Protocol):
     """Protocol for sources that provide code reviews (MRs, PRs).
 
     Implemented by GitLab MRs, GitHub PRs, etc.
