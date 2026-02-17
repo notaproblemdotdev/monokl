@@ -383,7 +383,7 @@ class WorkStore:
     ) -> None:
         """Trigger background refresh of stale cache."""
         task = asyncio.create_task(
-            self._background_refresh(data_type, subsection),
+            self._background_refresh(data_type=data_type, subsection=subsection),
         )
         self._background_tasks.add(task)
         task.add_done_callback(self._background_tasks.discard)

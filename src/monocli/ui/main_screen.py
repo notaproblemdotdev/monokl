@@ -17,7 +17,6 @@ from __future__ import annotations
 import asyncio
 import webbrowser
 from contextlib import suppress
-from typing import TYPE_CHECKING
 
 from textual.app import ComposeResult
 from textual.containers import Vertical
@@ -25,15 +24,14 @@ from textual.reactive import reactive
 from textual.screen import Screen
 from textual.widgets import Label
 
-from monocli import __version__, get_logger
+from monocli import __version__
+from monocli import get_logger
 from monocli.config import get_config
 from monocli.db.connection import get_db_manager
 from monocli.db.preferences import PreferencesManager
-from monocli.ui.sections import CodeReviewSection, PieceOfWorkSection
+from monocli.ui.sections import CodeReviewSection
+from monocli.ui.sections import PieceOfWorkSection
 from monocli.ui.topbar import TopBar
-
-if TYPE_CHECKING:
-    pass
 
 
 class MainScreen(Screen):
@@ -171,7 +169,6 @@ class MainScreen(Screen):
         2. Load cached data from DB immediately (for fast startup)
         3. Start background worker to fetch fresh data from CLIs
         """
-
         # Initialize database
         db = get_db_manager()
         await db.initialize()
@@ -241,9 +238,6 @@ class MainScreen(Screen):
     async def _load_assigned_reviews(self, logger) -> None:
         """Load assigned reviews from cache."""
         result = await self._store.get_code_reviews("assigned")
-        if not result.data:
-            return
-
         self.code_review_section.update_assigned_to_me(result.data)
         logger.debug(f"Loaded {len(result.data)} assigned code reviews")
         self._track_failed_sources(result)
@@ -251,9 +245,6 @@ class MainScreen(Screen):
     async def _load_opened_reviews(self, logger) -> None:
         """Load opened reviews from cache."""
         result = await self._store.get_code_reviews("opened")
-        if not result.data:
-            return
-
         self.code_review_section.update_opened_by_me(result.data)
         logger.debug(f"Loaded {len(result.data)} opened code reviews")
         self._track_failed_sources(result)
@@ -262,9 +253,6 @@ class MainScreen(Screen):
         """Load cached work items and update UI."""
         try:
             result = await self._store.get_work_items()
-            if not result.data:
-                return
-
             self.piece_of_work_section.update_data(result.data)
             logger.debug(f"Loaded {len(result.data)} work items")
             self._track_failed_sources(result)
@@ -535,4 +523,3 @@ class MainScreen(Screen):
         """
         # Key events are primarily handled via BINDINGS and action handlers
         # This method exists for verification compatibility and future extensibility
-        pass

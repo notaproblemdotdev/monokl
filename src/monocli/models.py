@@ -6,13 +6,16 @@ gh (GitHub), glab (GitLab), and acli (Jira).
 
 from __future__ import annotations
 
+import re
 import typing as t
-
 from datetime import datetime
 from enum import Enum
-from typing_extensions import TypedDict
 
-from pydantic import BaseModel, BeforeValidator, ConfigDict, Field, HttpUrl
+from pydantic import BaseModel
+from pydantic import BeforeValidator
+from pydantic import ConfigDict
+from pydantic import Field
+from pydantic import HttpUrl
 from typing_extensions import TypedDict
 
 
@@ -56,8 +59,8 @@ class PieceOfWork(t.Protocol):
     """
 
     # Adapter metadata
-    piece_icon: str
-    piece_type: str
+    adapter_icon: str
+    adapter_type: str
 
     # Core properties
     @property
@@ -446,9 +449,9 @@ class JiraPieceOfWork(BaseModel):
     @property
     def url(self) -> str:
         """Get the browser URL for this issue."""
-        # Convert API URL to browser URL
+        # Convert API URL to browser URL (handles v2, v3, etc.)
         url_str = str(self.self)
-        return url_str.replace("/rest/api/2/issue/", "/browse/").rstrip("/")
+        return re.sub(r"/rest/api/\d+/issue/", "/browse/", url_str).rstrip("/")
 
     def display_key(self) -> str:
         """Return formatted key for display."""

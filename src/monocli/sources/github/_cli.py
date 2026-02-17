@@ -6,7 +6,8 @@ and issues assigned to or authored by the current user.
 
 from monocli import get_logger
 from monocli.async_utils import CLIAdapter
-from monocli.exceptions import CLIAuthError, CLINotFoundError
+from monocli.exceptions import CLIAuthError
+from monocli.exceptions import CLINotFoundError
 
 logger = get_logger(__name__)
 
@@ -52,7 +53,7 @@ class GitHubAdapter(CLIAdapter):
             "--state",
             "open",
             "--json",
-            "number,title,state,author,url,createdAt,draft,headRefName",
+            "number,title,state,author,url,createdAt,headRefName",
         ]
         try:
             return await self.fetch_json(args)
@@ -75,7 +76,7 @@ class GitHubAdapter(CLIAdapter):
             "--state",
             "open",
             "--json",
-            "number,title,state,author,url,createdAt,draft,headRefName",
+            "number,title,state,author,url,createdAt,headRefName",
         ]
         try:
             return await self.fetch_json(args)
@@ -97,7 +98,7 @@ class GitHubAdapter(CLIAdapter):
             "review-requested:@me",
             "state:open",
             "--json",
-            "number,title,state,author,url,createdAt,draft,headRefName",
+            "number,title,state,author,url,createdAt,headRefName",
         ]
         try:
             return await self.fetch_json(args)
