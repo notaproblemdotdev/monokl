@@ -54,14 +54,21 @@ The app requires the following CLIs to be installed and authenticated:
 - `glab` - GitLab CLI
 - `acli` - Atlassian CLI (for Jira)
 
-Configure your GitLab group and Jira project in `~/.config/monocli/config.yaml`:
+Configure your GitLab group and Jira settings in `~/.config/monocli/config.yaml`:
 
 ```yaml
 gitlab:
   group: your-group-name
 
 jira:
-  project: YOUR-PROJECT
+  base_url: https://your-company.atlassian.net
+```
+
+Alternatively, use environment variables:
+
+```bash
+export MONOCLI_GITLAB_GROUP="your-group-name"
+export MONOCLI_JIRA_BASE_URL="https://your-company.atlassian.net"
 ```
 
 ## Development
