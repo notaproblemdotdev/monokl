@@ -200,7 +200,7 @@ class TestMergeRequestSection:
                 data_table.ordered_columns[i].label.plain
                 for i in range(len(data_table.ordered_columns))
             ]
-            assert columns == ["Key", "Title", "Status", "Author", "Branch", "Created"]
+            assert columns == ["Key", "Title", "Status  ", "Author", "Branch", "Created  "]
 
     def test_display_key_format(self, sample_mr: MergeRequest) -> None:
         """Test that MR keys are displayed with ! prefix."""
@@ -324,7 +324,15 @@ class TestWorkItemSection:
                 data_table.ordered_columns[i].label.plain
                 for i in range(len(data_table.ordered_columns))
             ]
-            assert columns == ["Icon", "Key", "Title", "Status", "Priority", "Context", "Date"]
+            assert columns == [
+                "Icon",
+                "Key",
+                "Title",
+                "Status  ",
+                "Priority  ",
+                "Context",
+                "Date  ",
+            ]
 
     @pytest.mark.asyncio
     async def test_unassigned_work_item(self) -> None:

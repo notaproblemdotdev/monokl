@@ -10,7 +10,9 @@ import webbrowser
 from contextlib import suppress
 from datetime import datetime
 from typing import TYPE_CHECKING
+from typing import Any
 
+from rich.text import Text
 from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.containers import Horizontal
@@ -20,6 +22,10 @@ from textual.widgets import DataTable
 from textual.widgets import Label
 from textual.widgets import Static
 
+from monocli.ui.sorting import SORT_INDICATOR_NONE
+from monocli.ui.sorting import SortMethod
+from monocli.ui.sorting import SortState
+from monocli.ui.sorting import get_sort_indicator
 from monocli.ui.spinner import StatusSpinner
 
 if TYPE_CHECKING:
@@ -47,11 +53,16 @@ class BaseSection(Static):
         Binding("o", "open_selected", "Open in Browser"),
         Binding("j", "move_down", "Down"),
         Binding("k", "move_up", "Up"),
+        Binding("p", "sort_priority", "Sort Priority"),
+        Binding("s", "sort_status", "Sort Status"),
+        Binding("d", "sort_date", "Sort Date"),
+        Binding("0", "sort_reset", "Reset Sort"),
     ]
 
     state: reactive[str] = reactive(SectionState.LOADING)
     error_message: reactive[str] = reactive("")
     loading_status: reactive[str] = reactive("")
+    sort_state: reactive[SortState | None] = reactive(None)
 
     DEFAULT_CSS = """
     BaseSection {
@@ -270,6 +281,76 @@ class BaseSection(Static):
         """Action handler to move selection up."""
         self.select_previous()
 
+    def action_sort_priority(self) -> None:
+        """Sort by priority column."""
+        self._apply_sort(SortMethod.PRIORITY)
+
+    def action_sort_status(self) -> None:
+        """Sort by status column."""
+        self._apply_sort(SortMethod.STATUS)
+
+    def action_sort_date(self) -> None:
+        """Sort by date column."""
+        self._apply_sort(SortMethod.DATE)
+
+    def action_sort_reset(self) -> None:
+        """Reset sort to default order."""
+        self._reset_sort()
+
+    def _apply_sort(self, method: SortMethod) -> None:
+        """Apply or toggle sort by given method.
+
+        Args:
+            method: The sort method to apply.
+        """
+        if self.sort_state and self.sort_state.method == method:
+            self.sort_state = self.sort_state.toggle_direction()
+        else:
+            self.sort_state = SortState(method=method, descending=True)
+        self._perform_sort()
+        self._update_header_indicators()
+
+    def _reset_sort(self) -> None:
+        """Reset sort to default (no sorting)."""
+        self.sort_state = None
+        self._perform_sort()
+        self._update_header_indicators()
+
+    def _perform_sort(self) -> None:
+        """Perform the actual sort on the data table.
+
+        Subclasses should override this to implement section-specific sorting.
+        """
+
+    def _update_header_indicators(self) -> None:
+        """Update column headers with sort indicators.
+
+        Subclasses should override this to update their specific columns.
+        """
+
+    def get_sort_state_dict(self) -> dict[str, Any] | None:
+        """Get current sort state as dict for persistence.
+
+        Returns:
+            SortState as dict or None if no sort applied.
+        """
+        if self.sort_state is None:
+            return None
+        return self.sort_state.to_dict()
+
+    def restore_sort_state(self, state_dict: dict[str, Any]) -> None:
+        """Restore sort state from persisted dict.
+
+        Args:
+            state_dict: Previously saved sort state.
+        """
+        try:
+            self.sort_state = SortState.from_dict(state_dict)
+            self._perform_sort()
+            self._update_header_indicators()
+        except Exception:
+            self.sort_state = None
+
 
 class CodeReviewSubSection(BaseSection):
     """Subsection widget for displaying code reviews (MRs/PRs).
@@ -289,6 +370,7 @@ class CodeReviewSubSection(BaseSection):
         """Initialize the code review subsection."""
         super().__init__("Code Reviews", *args, **kwargs)
         self._item_count = 0
+        self._col_keys: dict[str, Any] = {}
 
     def _get_empty_message(self) -> str:
         """Return empty state message for code reviews."""
@@ -301,7 +383,7 @@ class CodeReviewSubSection(BaseSection):
             self._setup_table()
 
     def _setup_table(self) -> None:
-        """Setup DataTable columns."""
+        """Setup DataTable columns with reserved space for sort indicators."""
         table = self._data_table
         if table is None:
             return
@@ -309,14 +391,18 @@ class CodeReviewSubSection(BaseSection):
         table.cursor_type = "row"
         table.zebra_stripes = True
         table.show_header = True
-        table.add_columns(
+        cols = table.add_columns(
             "Key",
             "Title",
-            "Status",
+            f"Status{SORT_INDICATOR_NONE}",
             "Author",
             "Branch",
-            "Created",
+            f"Created{SORT_INDICATOR_NONE}",
         )
+        self._col_keys = {
+            "status": cols[2],
+            "date": cols[5],
+        }
 
     def watch_code_reviews(self) -> None:
         """React to code review data changes."""
@@ -356,6 +442,62 @@ class CodeReviewSubSection(BaseSection):
             )
 
         self.state = SectionState.DATA
+
+    def _perform_sort(self) -> None:
+        """Sort code reviews by current sort state."""
+        if self._data_table is None or not self.code_reviews:
+            return
+
+        if self.sort_state is None or self.sort_state.method == SortMethod.NONE:
+            return
+
+        from monocli.ui.sorting import get_code_review_sort_key
+
+        sort_method = self.sort_state.method
+        sort_descending = self.sort_state.descending
+
+        sorted_reviews = sorted(
+            self.code_reviews,
+            key=lambda cr: get_code_review_sort_key(cr, sort_method),
+            reverse=sort_descending,
+        )
+
+        self._data_table.clear()
+        for cr in sorted_reviews:
+            created = self._format_date(cr.created_at)
+            self._data_table.add_row(
+                cr.display_key(),
+                self._truncate_title(cr.title),
+                cr.display_status(),
+                cr.author,
+                cr.source_branch,
+                created,
+                key=cr.url,
+            )
+
+    def _update_header_indicators(self) -> None:
+        """Update column headers with sort indicators."""
+        if self._data_table is None:
+            return
+
+        status_indicator = SORT_INDICATOR_NONE
+        date_indicator = SORT_INDICATOR_NONE
+
+        if self.sort_state:
+            indicator = get_sort_indicator(self.sort_state)
+            if self.sort_state.method == SortMethod.STATUS:
+                status_indicator = indicator
+            elif self.sort_state.method == SortMethod.DATE:
+                date_indicator = indicator
+
+        if "status" in self._col_keys:
+            self._data_table.columns[self._col_keys["status"]].label = Text(
+                f"Status{status_indicator}"
+            )
+        if "date" in self._col_keys:
+            self._data_table.columns[self._col_keys["date"]].label = Text(
+                f"Created{date_indicator}"
+            )
 
     def get_selected_url(self) -> str | None:
         """Get the URL of the currently selected row.
@@ -594,6 +736,7 @@ class PieceOfWorkSection(BaseSection):
         """Initialize the piece of work section."""
         super().__init__("Work Items", *args, **kwargs)
         self._item_count = 0
+        self._col_keys: dict[str, Any] = {}
 
     def _get_empty_message(self) -> str:
         """Return empty state message for work items."""
@@ -606,7 +749,7 @@ class PieceOfWorkSection(BaseSection):
             self._setup_table()
 
     def _setup_table(self) -> None:
-        """Setup DataTable columns."""
+        """Setup DataTable columns with reserved space for sort indicators."""
         table = self._data_table
         if table is None:
             return
@@ -614,15 +757,20 @@ class PieceOfWorkSection(BaseSection):
         table.cursor_type = "row"
         table.zebra_stripes = True
         table.show_header = True
-        table.add_columns(
+        cols = table.add_columns(
             "Icon",
             "Key",
             "Title",
-            "Status",
-            "Priority",
+            f"Status{SORT_INDICATOR_NONE}",
+            f"Priority{SORT_INDICATOR_NONE}",
             "Context",
-            "Date",
+            f"Date{SORT_INDICATOR_NONE}",
         )
+        self._col_keys = {
+            "status": cols[3],
+            "priority": cols[4],
+            "date": cols[6],
+        }
 
     def watch_work_items(self) -> None:
         """React to work items data changes."""
@@ -680,6 +828,79 @@ class PieceOfWorkSection(BaseSection):
             self.state = SectionState.DATA
         else:
             self.state = SectionState.EMPTY
+
+    def _perform_sort(self) -> None:
+        """Sort work items by current sort state."""
+        if self._data_table is None or not self.work_items:
+            return
+
+        if self.sort_state is None or self.sort_state.method == SortMethod.NONE:
+            return
+
+        from monocli.ui.sorting import get_work_item_sort_key
+
+        sort_method = self.sort_state.method
+        sort_descending = self.sort_state.descending
+
+        sorted_items = sorted(
+            self.work_items,
+            key=lambda item: get_work_item_sort_key(item, sort_method),
+            reverse=sort_descending,
+        )
+
+        self._data_table.clear()
+        for item in sorted_items:
+            try:
+                icon = item.adapter_icon
+                key = item.display_key()
+                title = self._truncate_title(item.title)
+                status = item.display_status()
+                priority = str(item.priority) if item.priority else ""
+                context = item.assignee or ""
+                date_str = item.due_date or ""
+                url = item.url
+
+                self._data_table.add_row(
+                    icon,
+                    key,
+                    title,
+                    status,
+                    priority,
+                    context,
+                    date_str,
+                    key=url,
+                )
+            except Exception:
+                continue
+
+    def _update_header_indicators(self) -> None:
+        """Update column headers with sort indicators."""
+        if self._data_table is None:
+            return
+
+        status_indicator = SORT_INDICATOR_NONE
+        priority_indicator = SORT_INDICATOR_NONE
+        date_indicator = SORT_INDICATOR_NONE
+
+        if self.sort_state:
+            indicator = get_sort_indicator(self.sort_state)
+            if self.sort_state.method == SortMethod.STATUS:
+                status_indicator = indicator
+            elif self.sort_state.method == SortMethod.PRIORITY:
+                priority_indicator = indicator
+            elif self.sort_state.method == SortMethod.DATE:
+                date_indicator = indicator
+
+        if "status" in self._col_keys:
+            self._data_table.columns[self._col_keys["status"]].label = Text(
+                f"Status{status_indicator}"
+            )
+        if "priority" in self._col_keys:
+            self._data_table.columns[self._col_keys["priority"]].label = Text(
+                f"Priority{priority_indicator}"
+            )
+        if "date" in self._col_keys:
+            self._data_table.columns[self._col_keys["date"]].label = Text(f"Date{date_indicator}")
 
     def get_selected_url(self) -> str | None:
         """Get the URL of the currently selected row.

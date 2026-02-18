@@ -174,3 +174,28 @@ class PreferencesManager:
     async def set_last_mr_subsection(self, subsection: str) -> None:
         """Save the last MR subsection."""
         await self.set("last_mr_subsection", subsection)
+
+    async def get_sort_preference(
+        self, section_id: str, preserve_sort: bool = True
+    ) -> dict[str, Any] | None:
+        """Get sort preference for a section.
+
+        Args:
+            section_id: Section identifier (e.g., "work_items", "cr_assigned").
+            preserve_sort: If False, return None regardless of stored value.
+
+        Returns:
+            Stored sort state dict or None if not found/preservation disabled.
+        """
+        if not preserve_sort:
+            return None
+        return await self.get(f"sort_{section_id}", default=None)
+
+    async def set_sort_preference(self, section_id: str, sort_state: dict[str, Any]) -> None:
+        """Save sort preference for a section.
+
+        Args:
+            section_id: Section identifier.
+            sort_state: SortState serialized as dict.
+        """
+        await self.set(f"sort_{section_id}", sort_state)

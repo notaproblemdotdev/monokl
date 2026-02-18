@@ -69,6 +69,14 @@ class DevConfig(BaseModel):
     show_logs_command: str = "tail -f {file}"
 
 
+class UIConfig(BaseModel):
+    """UI settings."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    preserve_sort_preference: bool = True
+
+
 class AdapterTypeConfig(BaseModel):
     """Configuration for a specific adapter type."""
 
@@ -108,6 +116,7 @@ class AppConfig(BaseModel):
     todoist: TodoistConfig = Field(default_factory=TodoistConfig)
     cache: CacheConfig = Field(default_factory=CacheConfig)
     dev: DevConfig = Field(default_factory=DevConfig)
+    ui: UIConfig = Field(default_factory=UIConfig)
     adapters: AdaptersConfig = Field(default_factory=AdaptersConfig)
 
     @classmethod

@@ -192,7 +192,7 @@ class MainScreen(Screen):
             self.run_worker(self._fetch_all_data_from_clis(), exclusive=True)
 
     async def _restore_ui_state(self) -> None:
-        """Restore last active section from preferences."""
+        """Restore last active section and sort preferences from preferences."""
         try:
             self.active_section = await self._prefs.get_last_active_section("mr")
             self.active_mr_subsection = await self._prefs.get_last_mr_subsection("assigned")
@@ -201,18 +201,54 @@ class MainScreen(Screen):
             self.code_review_section.focus_section(self.active_mr_subsection)
             if self.active_section == "work":
                 self.piece_of_work_section.focus_table()
+
+            # Restore sort preferences if enabled
+            config = get_config()
+            if config.preserve_sort_preference:
+                await self._restore_sort_preferences()
         except Exception:
             # Ignore errors restoring state
             pass
+
+    async def _restore_sort_preferences(self) -> None:
+        """Restore sort preferences for all sections."""
+        sections_to_restore = [
+            ("work_items", self.piece_of_work_section),
+            ("cr_assigned", self.code_review_section.assigned_to_me_section),
+            ("cr_opened", self.code_review_section.opened_by_me_section),
+        ]
+
+        for section_id, section in sections_to_restore:
+            sort_dict = await self._prefs.get_sort_preference(section_id)
+            if sort_dict:
+                section.restore_sort_state(sort_dict)
 
     async def _save_ui_state(self) -> None:
         """Save current UI state to preferences."""
         try:
             await self._prefs.set_last_active_section(self.active_section)
             await self._prefs.set_last_mr_subsection(self.active_mr_subsection)
+
+            # Save sort preferences if enabled
+            config = get_config()
+            if config.preserve_sort_preference:
+                await self._save_sort_preferences()
         except Exception:
             # Ignore errors saving state
             pass
+
+    async def _save_sort_preferences(self) -> None:
+        """Save sort preferences for all sections."""
+        sections_to_save = [
+            ("work_items", self.piece_of_work_section),
+            ("cr_assigned", self.code_review_section.assigned_to_me_section),
+            ("cr_opened", self.code_review_section.opened_by_me_section),
+        ]
+
+        for section_id, section in sections_to_save:
+            sort_dict = section.get_sort_state_dict()
+            if sort_dict:
+                await self._prefs.set_sort_preference(section_id, sort_dict)
 
     async def _load_cached_data(self) -> None:
         """Load cached data from database for immediate display.

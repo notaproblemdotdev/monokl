@@ -264,6 +264,11 @@ class Config:
         """Get the command to view log files."""
         return self._model.dev.show_logs_command
 
+    @property
+    def preserve_sort_preference(self) -> bool:
+        """Get whether to persist sort preferences across sessions."""
+        return self._model.ui.preserve_sort_preference
+
     def get_config_path(self) -> Path | None:
         """Get the path to the config file being used.
 
