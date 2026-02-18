@@ -28,6 +28,7 @@ from textual.widgets import Select
 
 from monocli import get_logger
 from monocli.config import get_config
+from monocli.sources.base import AdapterStatus
 from monocli.sources.integrations import get_all_integrations
 
 if TYPE_CHECKING:
@@ -60,6 +61,7 @@ class IntegrationCard(Container):
 
     IntegrationCard > .card-header {
         text-style: bold;
+        margin-bottom: 0;
     }
 
     IntegrationCard > .card-description {
@@ -100,8 +102,15 @@ class IntegrationCard(Container):
 
     IntegrationCard Button {
         min-width: 8;
+        height: 3;
+        padding: 0 2;
     }
     """
+
+    integration_id: reactive[str] = reactive("")
+    selected_adapter: reactive[str] = reactive("")
+    status: reactive[AdapterStatus | None] = reactive(None)
+    _is_loading: reactive[bool] = reactive(False)
 
     def __init__(
         self,
@@ -109,6 +118,28 @@ class IntegrationCard(Container):
     ) -> None:
         super().__init__()
         self._integration = integration
+        self.integration_id = integration.id
+        self._init_adapter_selection()
+
+    def _init_adapter_selection(self) -> None:
+        """Determine the initial adapter selection based on config and availability."""
+        config = get_config()
+        selected = config.get_selected_adapter(self._integration.id)
+        available = self._integration.available_adapters
+        cli_available = self._integration.cli_name and shutil.which(self._integration.cli_name)
+
+        selected_lower = selected.lower() if selected else None
+
+        if selected_lower and selected_lower in available:
+            self.selected_adapter = selected_lower
+        elif cli_available and "cli" in available:
+            self.selected_adapter = "cli"
+        elif available:
+            self.selected_adapter = available[0]
+        elif "cli" in available:
+            self.selected_adapter = "cli"
+        else:
+            self.selected_adapter = ""
 
     def compose(self) -> ComposeResult:
         with Horizontal(classes="card-header"):
@@ -116,12 +147,21 @@ class IntegrationCard(Container):
             yield Label(self._integration.description, classes="card-description")
 
         with Horizontal(classes="adapter-row"):
-            adapters = [(a, a.upper()) for a in self._integration.available_adapters]
-            yield Select(
-                adapters,
-                id="adapter-select",
-                classes="adapter-select",
+            adapters = [(a.upper(), a) for a in self._integration.available_adapters]
+            initial_value = (
+                self.selected_adapter
+                if self.selected_adapter in self._integration.available_adapters
+                else None
             )
+            if not adapters:
+                yield Label("No adapters available")
+            else:
+                yield Select(
+                    adapters,
+                    value=initial_value,
+                    id="adapter-select",
+                    classes="adapter-select",
+                )
             yield Label("", id="cli-status", classes="cli-status")
 
         with Horizontal(classes="status-row"):
@@ -156,12 +196,6 @@ class IntegrationCard(Container):
         await self._check_status()
 
     def _load_initial_state(self) -> None:
-        config = get_config()
-        selected = config.get_selected_adapter(self._integration.id)
-        if selected and selected in self._integration.available_adapters:
-            self.selected_adapter = selected
-            self._get_adapter_select().value = selected
-
         if self._integration.cli_name:
             cli_status = self._get_cli_status()
             if shutil.which(self._integration.cli_name):
@@ -174,7 +208,7 @@ class IntegrationCard(Container):
                 cli_status.remove_class("installed")
 
     async def _check_status(self) -> None:
-        self.loading = True
+        self._is_loading = True
         self._get_status_text().update("Checking...")
 
         try:
@@ -189,7 +223,7 @@ class IntegrationCard(Container):
             self._get_status_text().update(f"Error: {e}")
             self.add_class("error")
         finally:
-            self.loading = False
+            self._is_loading = False
 
     def _create_adapter(self) -> SetupCapableSource | None:
         if self.selected_adapter == "cli" and self._integration.create_cli_adapter:
@@ -398,7 +432,7 @@ class SetupActionDialog(Screen):
 
     integration_id: reactive[str] = reactive("")
     action_id: reactive[str] = reactive("")
-    loading: reactive[bool] = reactive(False)
+    _is_loading: reactive[bool] = reactive(False)
     result_message: reactive[str] = reactive("")
     result_success: reactive[bool] = reactive(False)
 
@@ -511,7 +545,7 @@ class SetupActionDialog(Screen):
         if not self._action or not self._adapter:
             return
 
-        self.loading = True
+        self._is_loading = True
         self._update_loading_ui(True)
 
         try:
@@ -538,7 +572,7 @@ class SetupActionDialog(Screen):
             result_label.update(f"Error: {e}")
             result_label.add_class("error")
         finally:
-            self.loading = False
+            self._is_loading = False
             self._update_loading_ui(False)
 
     async def _run_external_process(self):
@@ -549,7 +583,7 @@ class SetupActionDialog(Screen):
 
         import asyncio
 
-        async with self.app.suspend():
+        with self.app.suspend():
             process = await asyncio.create_subprocess_shell(
                 self._action.external_command,
             )
