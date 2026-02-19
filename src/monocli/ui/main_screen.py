@@ -73,7 +73,7 @@ class MainScreen(Screen):
 
     #work-container {
         height: 1fr;
-        border: round white;
+        border: round $text-muted;
         border-title-align: left;
         border-subtitle-align: right;
         padding: 0 1;

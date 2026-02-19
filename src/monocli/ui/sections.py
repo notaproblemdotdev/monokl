@@ -392,7 +392,7 @@ class CodeReviewSubSection(BaseSection):
 
     DEFAULT_CSS = """
     CodeReviewSubSection {
-        border: round white;
+        border: round $text-muted;
         border-title-align: left;
         border-subtitle-align: right;
         padding: 0 1;

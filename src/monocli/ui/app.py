@@ -25,6 +25,7 @@ class MonoApp(App):
         # python -m monocli
     """
 
+    THEME = "atom-one-dark"
     SCREENS = {
         "main": MainScreen,
         "setup": SetupScreen,
