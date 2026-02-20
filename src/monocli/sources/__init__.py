@@ -14,9 +14,11 @@ from .gitlab import GitLabSource
 from .jira import JiraSource
 from .registry import SourceRegistry
 from .todoist import TodoistSource
+from .azuredevops import AzureDevOpsSource
 
 __all__ = [
     "APIBaseAdapter",
+    "AzureDevOpsSource",
     "CLIBaseAdapter",
     "CodeReviewSource",
     "GitHubSource",

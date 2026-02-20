@@ -44,6 +44,7 @@ def create_work_store(config: Config) -> WorkStore:
 
     _register_code_review_sources(registry, config)
     _register_work_sources(registry, config)
+    _register_azuredevops(registry, config)
 
     return WorkStore(
         source_registry=registry,
@@ -127,3 +128,30 @@ def _register_todoist(registry: SourceRegistry, config: Config) -> None:
         logger.debug("Registered Todoist source")
     except Exception as e:
         logger.warning("Failed to initialize Todoist source", error=str(e))
+
+
+def _register_azuredevops(registry: SourceRegistry, config: Config) -> None:
+    """Register Azure DevOps source if configured.
+
+    AzureDevOpsSource implements both CodeReviewSource and PieceOfWorkSource,
+    so it is registered for both interfaces.
+    """
+    from monocli.sources import AzureDevOpsSource
+
+    token = config.azuredevops_token
+    organizations = config.azuredevops_organizations
+
+    if not token or not organizations:
+        logger.debug("Azure DevOps not configured, skipping")
+        return
+
+    try:
+        azuredevops_source = AzureDevOpsSource(
+            token=token,
+            organizations=organizations,
+        )
+        registry.register_code_review_source(azuredevops_source)
+        registry.register_piece_of_work_source(azuredevops_source)
+        logger.debug("Registered Azure DevOps source")
+    except Exception as e:
+        logger.warning("Failed to initialize Azure DevOps source", error=str(e))

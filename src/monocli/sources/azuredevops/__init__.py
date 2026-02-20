@@ -147,6 +147,7 @@ class AzureDevOpsSource(CodeReviewSource, PieceOfWorkSource, SetupCapableSource)
                 description="Set up Azure DevOps API token and organizations",
                 requires_params=True,
                 external_process=False,
+                save_action=True,
                 params=[
                     SetupParam(
                         id="token",
@@ -214,6 +215,7 @@ class AzureDevOpsSource(CodeReviewSource, PieceOfWorkSource, SetupCapableSource)
 
                 return SetupResult(success=True, message="Configuration saved successfully")
             except Exception as e:
+                logger.exception("Failed to save Azure DevOps configuration")
                 return SetupResult(success=False, error=str(e))
 
         return SetupResult(success=False, error=f"Unknown action: {action_id}")
@@ -436,7 +438,9 @@ class AzureDevOpsAPISetupSource(SetupCapableSource):
                         required=True,
                         secret=True,
                         placeholder="Enter your Azure DevOps PAT",
-                        help_text="Create a PAT at dev.azure.com/_usersSettings/tokens",
+                        help_text="Create a PAT at dev.azure.com/_usersSettings/tokens. "
+                        "Required scopes: Work Items (Read), Code (Read), "
+                        "Build (Read), Release (Read)",
                     ),
                     SetupParam(
                         id="organization",
@@ -495,6 +499,7 @@ class AzureDevOpsAPISetupSource(SetupCapableSource):
 
                 return SetupResult(success=True, message="Configuration saved successfully")
             except Exception as e:
+                logger.exception("Failed to save Azure DevOps configuration")
                 return SetupResult(success=False, error=str(e))
 
         return SetupResult(success=False, error=f"Unknown action: {action_id}")

@@ -41,6 +41,10 @@ class MonoApp(App):
     Screen {
         background: $surface-darken-1;
     }
+
+    * {
+        scrollbar-size: 1 1;
+    }
     """
 
     def __init__(self, initial_screen: str = "main") -> None:

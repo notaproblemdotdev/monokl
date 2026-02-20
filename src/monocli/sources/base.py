@@ -41,6 +41,7 @@ class SetupAction:
     - Form-based (requires_params=True): Shows a form dialog in the UI
     - External process (external_process=True): Suspends UI and runs CLI command
     - Simple (neither): Can execute directly without user input
+    - Save action (save_action=True): Saves config, shows "Save" button instead of "Execute"
     """
 
     id: str
@@ -52,6 +53,7 @@ class SetupAction:
     external_command: str | None = None
     confirm_message: str | None = None
     params: list[SetupParam] = field(default_factory=list)
+    save_action: bool = False
 
 
 @dataclass(frozen=True, slots=True)

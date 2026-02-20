@@ -126,6 +126,7 @@ class TodoistSource(PieceOfWorkSource, SetupCapableSource):
                 description="Set up Todoist API token",
                 requires_params=True,
                 external_process=False,
+                save_action=True,
                 params=[
                     SetupParam(
                         id="token",
@@ -162,6 +163,7 @@ class TodoistSource(PieceOfWorkSource, SetupCapableSource):
                 keyring_utils.set_secret("adapters.todoist.api.token", token)
                 return SetupResult(success=True, message="Token saved successfully")
             except Exception as e:
+                logger.exception("Failed to save Todoist config")
                 return SetupResult(success=False, error=str(e))
 
         return SetupResult(success=False, error=f"Unknown action: {action_id}")
@@ -256,6 +258,7 @@ class TodoistAPISetupSource(SetupCapableSource):
                 description="Set up Todoist API token",
                 requires_params=True,
                 external_process=False,
+                save_action=True,
                 params=[
                     SetupParam(
                         id="token",
@@ -292,6 +295,7 @@ class TodoistAPISetupSource(SetupCapableSource):
                 keyring_utils.set_secret("adapters.todoist.api.token", token)
                 return SetupResult(success=True, message="Token saved successfully")
             except Exception as e:
+                logger.exception("Failed to save Todoist config")
                 return SetupResult(success=False, error=str(e))
 
         return SetupResult(success=False, error=f"Unknown action: {action_id}")

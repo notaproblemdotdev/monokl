@@ -487,6 +487,9 @@ class SetupActionDialog(Screen):
         else:
             self.query_one("#dialog-description", Label).display = False
 
+        execute_btn = self.query_one("#btn-execute", Button)
+        execute_btn.label = "Save" if self._action.save_action else "Execute"
+
         if self._action.external_process:
             self.query_one("#dialog-description", Label).update(
                 "This will open a terminal session for authentication. "
@@ -544,7 +547,11 @@ class SetupActionDialog(Screen):
                 params = self._get_param_values()
                 result = await self._adapter.execute_setup_action(self._action.id, params)
 
-            self.result_message = result.message or ("Success" if result.success else "Failed")
+            self.result_message = (
+                result.message or (result.error if result.error else "Failed")
+                if result.success
+                else (result.error or "Failed")
+            )
             self.result_success = result.success
 
             result_label = self.query_one("#result-message", Label)

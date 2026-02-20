@@ -66,6 +66,11 @@ class MainScreen(Screen):
         layout: vertical;
     }
 
+    /* Slim scrollbars throughout the app */
+    * {
+        scrollbar-size: 1 1;
+    }
+
     #mr-container {
         height: 50%;
         padding: 0;
