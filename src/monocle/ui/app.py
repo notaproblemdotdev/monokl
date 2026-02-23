@@ -3,8 +3,12 @@
 Provides MonoApp class - the entry point for the dashboard UI.
 """
 
+from collections.abc import Iterable
+
 from textual.app import App
+from textual.app import SystemCommand
 from textual.binding import Binding
+from textual.screen import Screen
 
 from monocle.config import get_config
 from monocle.ui.main_screen import MainScreen
@@ -65,3 +69,12 @@ class MonoApp(App):
 
     def action_open_setup(self) -> None:
         self.push_screen("setup")
+
+    def get_system_commands(self, screen: Screen) -> Iterable[SystemCommand]:
+        """Add app-specific commands to the command palette."""
+        yield from super().get_system_commands(screen)
+        yield SystemCommand(
+            "Setup",
+            "Open the setup screen for configuring integrations",
+            self.action_open_setup,
+        )
