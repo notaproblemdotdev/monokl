@@ -11,3 +11,5 @@ import pytest
 def pytest_configure(config):
     """Configure pytest markers."""
     config.addinivalue_line("markers", "integration: mark test as integration test")
+    config.addinivalue_line("markers", "integration_smoke: fast deterministic integration tests")
+    config.addinivalue_line("markers", "integration_full: broader integration scenario tests")

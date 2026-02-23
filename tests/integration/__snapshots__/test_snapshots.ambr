@@ -1,0 +1,10 @@
+# serializer version: 1
+# name: test_code_review_section_populated
+  Vertical(id='mr-container')
+# ---
+# name: test_error_state_visual
+  Vertical(id='mr-container')
+# ---
+# name: test_piece_of_work_section_populated
+  Vertical(id='work-container')
+# ---

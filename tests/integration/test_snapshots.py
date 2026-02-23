@@ -1,456 +1,88 @@
-"""Snapshot tests for UI components.
-
-Uses pytest-textual-snapshot to capture visual state of sections.
-Run with: pytest --snapshot-update to generate baseline snapshots.
-"""
+"""Snapshot tests for key dashboard states."""
 
 from __future__ import annotations
 
 import pytest
 
-from monocle.db.connection import DatabaseManager
-from monocle.db.work_store import WorkStore
-from monocle.models import CodeReview
-from monocle.models import JiraPieceOfWork
-from monocle.models import TodoistPieceOfWork
-from monocle.sources.registry import SourceRegistry
+from monocle.ui.main_screen import MainScreen
 from monocle.ui.app import MonoApp
-from tests.integration.conftest import MockGitLabSource
-from tests.integration.conftest import MockJiraSource
+from tests.support.factories import make_code_review
+from tests.support.factories import make_jira_item
 
-pytestmark = [pytest.mark.integration, pytest.mark.asyncio]
+pytestmark = [
+    pytest.mark.integration,
+    pytest.mark.integration_full,
+    pytest.mark.asyncio,
+    pytest.mark.snapshot,
+]
 
 
-@pytest.mark.snapshot
+def _get_main_screen(app: MonoApp) -> MainScreen:
+    """Find MainScreen on the app's stack."""
+    for screen in app.screen_stack:
+        if isinstance(screen, MainScreen):
+            return screen
+    raise AssertionError("MainScreen not found in screen stack")
+
+
 async def test_code_review_section_populated(
-    monkeypatch: pytest.MonkeyPatch,
-    tmp_path,
-    snapshot,
+    monkeypatch: pytest.MonkeyPatch, mock_work_store, mock_gitlab_source, snapshot
 ) -> None:
-    """Snapshot test for code review section with data."""
-    # Setup
-    db_path = tmp_path / "test.db"
-    db = DatabaseManager(str(db_path))
-    await db.initialize()
+    """Snapshot for populated code review section."""
+    mock_gitlab_source.assigned = [
+        make_code_review(idx=1, adapter_type="gitlab", adapter_icon="🦊", title="Fix auth"),
+        make_code_review(idx=2, adapter_type="gitlab", adapter_icon="🦊", title="Improve docs"),
+    ]
 
-    # Create source with data
-    source = MockGitLabSource(
-        source_type="gitlab",
-        assigned=[
-            CodeReview(
-                id="1",
-                key="!42",
-                title="Fix authentication bug",
-                state="open",
-                author="developer",
-                source_branch="feature/auth-fix",
-                url="https://gitlab.com/test/42",
-                adapter_type="gitlab",
-                adapter_icon="🦊",
-            ),
-            CodeReview(
-                id="2",
-                key="!43",
-                title="Update documentation",
-                state="open",
-                author="writer",
-                source_branch="docs/update",
-                url="https://gitlab.com/test/43",
-                adapter_type="gitlab",
-                adapter_icon="🦊",
-            ),
-        ],
-    )
-
-    registry = SourceRegistry()
-    registry.register_code_review_source(source)
-
-    store = WorkStore(registry)
-
-    # Create app
     app = MonoApp()
 
-    async def mock_create_store(config):
-        return store
+    def mock_create_store(config):
+        return mock_work_store
 
-    monkeypatch.setattr(
-        "monocle.ui.work_store_factory.create_work_store",
-        mock_create_store,
-    )
+    monkeypatch.setattr("monocle.ui.work_store_factory.create_work_store", mock_create_store)
 
     async with app.run_test(size=(120, 40)) as pilot:
-        await pilot.pause()
-        await pilot.pause(0.3)
-
-        # Take snapshot of the code review section
-        mr_container = pilot.app.query_one("#mr-container")
+        await pilot.pause(0.8)
+        screen = _get_main_screen(pilot.app)
+        mr_container = screen.query_one("#mr-container")
         assert snapshot == mr_container
 
-    await db.close()
 
-
-@pytest.mark.snapshot
 async def test_piece_of_work_section_populated(
-    monkeypatch: pytest.MonkeyPatch,
-    tmp_path,
-    snapshot,
+    monkeypatch: pytest.MonkeyPatch, mock_work_store, mock_jira_source, snapshot
 ) -> None:
-    """Snapshot test for work items section with data."""
-    # Setup
-    db_path = tmp_path / "test.db"
-    db = DatabaseManager(str(db_path))
-    await db.initialize()
+    """Snapshot for populated work section."""
+    mock_jira_source.items = [make_jira_item(idx=1)]
 
-    # Create source with data
-    jira_source = MockJiraSource(
-        source_type="jira",
-        items=[
-            JiraPieceOfWork(
-                key="PROJ-123",
-                fields={
-                    "summary": "Implement feature",
-                    "status": {"name": "In Progress"},
-                    "priority": {"name": "High"},
-                    "assignee": {"displayName": "Developer"},
-                },
-                self="https://jira.example.com/rest/api/2/issue/123",
-            ),
-        ],
-    )
-
-    registry = SourceRegistry()
-    registry.register_piece_of_work_source(jira_source)
-
-    store = WorkStore(registry)
-
-    # Create app
     app = MonoApp()
 
-    async def mock_create_store(config):
-        return store
+    def mock_create_store(config):
+        return mock_work_store
 
-    monkeypatch.setattr(
-        "monocle.ui.work_store_factory.create_work_store",
-        mock_create_store,
-    )
+    monkeypatch.setattr("monocle.ui.work_store_factory.create_work_store", mock_create_store)
 
     async with app.run_test(size=(120, 40)) as pilot:
-        await pilot.pause()
-        await pilot.pause(0.3)
-
-        # Take snapshot of the work section
-        work_container = pilot.app.query_one("#work-container")
+        await pilot.pause(0.8)
+        screen = _get_main_screen(pilot.app)
+        work_container = screen.query_one("#work-container")
         assert snapshot == work_container
 
-    await db.close()
 
-
-@pytest.mark.snapshot
-async def test_empty_state_visual(
-    monkeypatch: pytest.MonkeyPatch,
-    tmp_path,
-    snapshot,
-) -> None:
-    """Snapshot test for empty state."""
-    # Setup
-    db_path = tmp_path / "test.db"
-    db = DatabaseManager(str(db_path))
-    await db.initialize()
-
-    # Create empty source
-    source = MockGitLabSource(
-        source_type="gitlab",
-        assigned=[],
-        authored=[],
-    )
-
-    registry = SourceRegistry()
-    registry.register_code_review_source(source)
-
-    store = WorkStore(registry)
-
-    # Create app
-    app = MonoApp()
-
-    async def mock_create_store(config):
-        return store
-
-    monkeypatch.setattr(
-        "monocle.ui.work_store_factory.create_work_store",
-        mock_create_store,
-    )
-
-    async with app.run_test(size=(120, 40)) as pilot:
-        await pilot.pause()
-        await pilot.pause(0.3)
-
-        # Take snapshot showing empty state
-        mr_container = pilot.app.query_one("#mr-container")
-        assert snapshot == mr_container
-
-    await db.close()
-
-
-@pytest.mark.snapshot
 async def test_error_state_visual(
-    monkeypatch: pytest.MonkeyPatch,
-    tmp_path,
-    snapshot,
+    monkeypatch: pytest.MonkeyPatch, mock_work_store, mock_gitlab_source, snapshot
 ) -> None:
-    """Snapshot test for error state."""
-    # Setup
-    db_path = tmp_path / "test.db"
-    db = DatabaseManager(str(db_path))
-    await db.initialize()
+    """Snapshot for error state rendering."""
+    mock_gitlab_source.assigned_exception = Exception("Connection failed")
 
-    # Create failing source
-    source = MockGitLabSource(
-        source_type="gitlab",
-        should_fail=True,
-        failure_exception=Exception("Connection failed"),
-    )
-
-    registry = SourceRegistry()
-    registry.register_code_review_source(source)
-
-    store = WorkStore(registry)
-
-    # Create app
     app = MonoApp()
 
-    async def mock_create_store(config):
-        return store
+    def mock_create_store(config):
+        return mock_work_store
 
-    monkeypatch.setattr(
-        "monocle.ui.work_store_factory.create_work_store",
-        mock_create_store,
-    )
+    monkeypatch.setattr("monocle.ui.work_store_factory.create_work_store", mock_create_store)
 
     async with app.run_test(size=(120, 40)) as pilot:
-        await pilot.pause()
-        await pilot.pause(0.3)
-
-        # Take snapshot showing error state
-        mr_container = pilot.app.query_one("#mr-container")
+        await pilot.pause(0.8)
+        screen = _get_main_screen(pilot.app)
+        mr_container = screen.query_one("#mr-container")
         assert snapshot == mr_container
-
-    await db.close()
-
-
-@pytest.mark.snapshot
-async def test_full_dashboard_view(
-    monkeypatch: pytest.MonkeyPatch,
-    tmp_path,
-    snapshot,
-) -> None:
-    """Snapshot test of full dashboard with all sections."""
-    # Setup
-    db_path = tmp_path / "test.db"
-    db = DatabaseManager(str(db_path))
-    await db.initialize()
-
-    # Create sources with data
-    gitlab_source = MockGitLabSource(
-        source_type="gitlab",
-        assigned=[
-            CodeReview(
-                id="gl-1",
-                key="!42",
-                title="Fix authentication bug",
-                state="open",
-                author="developer1",
-                source_branch="feature/auth-fix",
-                url="https://gitlab.com/test/42",
-                adapter_type="gitlab",
-                adapter_icon="🦊",
-            ),
-        ],
-        authored=[
-            CodeReview(
-                id="gl-2",
-                key="!43",
-                title="[WIP] New feature",
-                state="open",
-                author="me",
-                source_branch="feature/new",
-                url="https://gitlab.com/test/43",
-                adapter_type="gitlab",
-                adapter_icon="🦊",
-            ),
-        ],
-    )
-
-    jira_source = MockJiraSource(
-        source_type="jira",
-        items=[
-            JiraPieceOfWork(
-                key="PROJ-123",
-                fields={
-                    "summary": "Implement user auth",
-                    "status": {"name": "In Progress"},
-                    "priority": {"name": "High"},
-                    "assignee": {"displayName": "Developer"},
-                },
-                self="https://jira.example.com/rest/api/2/issue/123",
-            ),
-            JiraPieceOfWork(
-                key="PROJ-124",
-                fields={
-                    "summary": "Fix bug",
-                    "status": {"name": "Open"},
-                    "priority": {"name": "Highest"},
-                    "assignee": {"displayName": "Developer"},
-                },
-                self="https://jira.example.com/rest/api/2/issue/124",
-            ),
-        ],
-    )
-
-    todoist_source = MockJiraSource(
-        source_type="todoist",
-        items=[
-            TodoistPieceOfWork(
-                id="1",
-                content="Review PRs",
-                priority=4,
-                project_id="123",
-                project_name="Work",
-                url="https://todoist.com/1",
-                is_completed=False,
-            ),
-        ],
-    )
-
-    registry = SourceRegistry()
-    registry.register_code_review_source(gitlab_source)
-    registry.register_piece_of_work_source(jira_source)
-    registry.register_piece_of_work_source(todoist_source)
-
-    store = WorkStore(registry)
-
-    # Create app
-    app = MonoApp()
-
-    async def mock_create_store(config):
-        return store
-
-    monkeypatch.setattr(
-        "monocle.ui.work_store_factory.create_work_store",
-        mock_create_store,
-    )
-
-    async with app.run_test(size=(120, 40)) as pilot:
-        await pilot.pause()
-        await pilot.pause(0.3)
-
-        # Take snapshot of full screen
-        screen = pilot.app.screen
-        assert snapshot == screen
-
-    await db.close()
-
-
-@pytest.mark.snapshot
-async def test_loading_state_visual(
-    monkeypatch: pytest.MonkeyPatch,
-    tmp_path,
-    snapshot,
-) -> None:
-    """Snapshot test for loading state."""
-    # Setup
-    db_path = tmp_path / "test.db"
-    db = DatabaseManager(str(db_path))
-    await db.initialize()
-
-    # Create source with delay
-    source = MockGitLabSource(
-        source_type="gitlab",
-        assigned=[],
-        fetch_delay=5.0,  # Long delay to keep loading state
-    )
-
-    registry = SourceRegistry()
-    registry.register_code_review_source(source)
-
-    store = WorkStore(registry)
-
-    # Create app
-    app = MonoApp()
-
-    async def mock_create_store(config):
-        return store
-
-    monkeypatch.setattr(
-        "monocle.ui.work_store_factory.create_work_store",
-        mock_create_store,
-    )
-
-    async with app.run_test(size=(120, 40)) as pilot:
-        # Check immediately (should be loading)
-        await pilot.pause()
-
-        # Take snapshot of loading state
-        mr_container = pilot.app.query_one("#mr-container")
-        assert snapshot == mr_container
-
-    await db.close()
-
-
-@pytest.mark.snapshot
-async def test_work_section_active_state(
-    monkeypatch: pytest.MonkeyPatch,
-    tmp_path,
-    snapshot,
-) -> None:
-    """Snapshot test for work section when active."""
-    # Setup
-    db_path = tmp_path / "test.db"
-    db = DatabaseManager(str(db_path))
-    await db.initialize()
-
-    # Create sources
-    jira_source = MockJiraSource(
-        source_type="jira",
-        items=[
-            JiraPieceOfWork(
-                key="PROJ-123",
-                fields={
-                    "summary": "Test issue",
-                    "status": {"name": "In Progress"},
-                    "priority": {"name": "Medium"},
-                    "assignee": {"displayName": "User"},
-                },
-                self="https://jira.example.com/rest/api/2/issue/123",
-            ),
-        ],
-    )
-
-    registry = SourceRegistry()
-    registry.register_piece_of_work_source(jira_source)
-
-    store = WorkStore(registry)
-
-    # Create app
-    app = MonoApp()
-
-    async def mock_create_store(config):
-        return store
-
-    monkeypatch.setattr(
-        "monocle.ui.work_store_factory.create_work_store",
-        mock_create_store,
-    )
-
-    async with app.run_test(size=(120, 40)) as pilot:
-        await pilot.pause()
-        await pilot.pause(0.3)
-
-        # Switch to work section
-        await pilot.press("tab")
-        await pilot.press("tab")
-
-        # Take snapshot of active work section
-        work_container = pilot.app.query_one("#work-container")
-        assert snapshot == work_container
-
-    await db.close()

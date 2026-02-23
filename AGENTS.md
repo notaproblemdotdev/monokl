@@ -12,8 +12,8 @@ uv run python -m monocle
 uv run monocle-dev
 
 # Run tests
-uv run pytest
-uv run pytest tests/ui/test_sections.py -v   # specific test file
+uv run python -m pytest
+uv run python -m pytest tests/ui/test_sections.py -v   # specific test file
 
 # Linting and formatting
 uv run ruff check .

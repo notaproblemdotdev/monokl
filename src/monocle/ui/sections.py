@@ -627,6 +627,7 @@ class CodeReviewSection(Static):
     def __init__(self, *args: object, **kwargs: object) -> None:
         """Initialize the code review container with two subsections."""
         super().__init__(*args, **kwargs)
+        self.opened_by_me_section = CodeReviewSubSection(id="cr-opened-by-me")
         self.opened_by_me_section.section_title = "Opened by me"
         self.opened_by_me_section.subsection_type = "opened"
         self.assigned_to_me_section = CodeReviewSubSection(id="cr-assigned-to-me")

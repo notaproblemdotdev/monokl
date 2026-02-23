@@ -15,11 +15,11 @@ from typing import Literal
 from monocle import get_logger
 from monocle.db._cache_backend import _CacheBackend
 from monocle.db._source_health import _SourceHealth
+from monocle.models import CodeReview
 from monocle.models import JiraWorkItem
 from monocle.models import TodoistTask
 
 if TYPE_CHECKING:
-    from monocle.models import CodeReview
     from monocle.models import PieceOfWork
     from monocle.sources.base import CodeReviewSource
     from monocle.sources.base import PieceOfWorkSource
@@ -273,7 +273,7 @@ class WorkStore:
         reviews: list[CodeReview] = []
         for item in cached:
             try:
-                review = CodeReview.model_validate(item)
+                review = CodeReview.model_validate(item, strict=False)
                 reviews.append(review)
             except Exception as e:
                 logger.warning(
@@ -334,9 +334,9 @@ class WorkStore:
         adapter_type = item.get("adapter_type", item.get("source_type", ""))
 
         if adapter_type == "jira":
-            return JiraWorkItem.model_validate(item)
+            return JiraWorkItem.model_validate(item, strict=False)
         if adapter_type == "todoist":
-            return TodoistTask.model_validate(item)
+            return TodoistTask.model_validate(item, strict=False)
 
         logger.warning("Unknown work item type", type=adapter_type)
         return None

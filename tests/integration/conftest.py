@@ -1,16 +1,10 @@
-"""Integration test fixtures and configuration.
-
-Provides fixtures for full-stack integration tests with mocked database
-and data sources. Each test gets isolated resources.
-"""
+"""Integration test fixtures and configuration."""
 
 from __future__ import annotations
 
-import asyncio
 from collections.abc import AsyncGenerator
 from collections.abc import Callable
 from collections.abc import Generator
-from datetime import datetime
 from pathlib import Path
 from typing import Any
 from unittest.mock import MagicMock
@@ -23,10 +17,115 @@ from monocle.db.work_store import WorkStore
 from monocle.models import CodeReview
 from monocle.models import JiraPieceOfWork
 from monocle.models import TodoistPieceOfWork
-from monocle.sources.base import CodeReviewSource
-from monocle.sources.base import PieceOfWorkSource
 from monocle.sources.registry import SourceRegistry
 from monocle.ui.app import MonoApp
+from tests.support.factories import make_code_review
+from tests.support.factories import make_jira_item
+from tests.support.factories import make_todoist_item
+from tests.support.stubs import StubCodeReviewSource
+from tests.support.stubs import StubPieceOfWorkSource
+
+
+class MockGitLabSource(StubCodeReviewSource):
+    """Compatibility wrapper around StubCodeReviewSource for GitLab tests."""
+
+    def __init__(
+        self,
+        assigned: list[CodeReview] | None = None,
+        authored: list[CodeReview] | None = None,
+        available: bool = True,
+        authenticated: bool = True,
+        should_fail: bool = False,
+        failure_exception: Exception | None = None,
+        fetch_delay: float = 0.0,
+        source_type: str = "gitlab",
+    ):
+        super().__init__(
+            source_type=source_type,
+            source_icon="🦊" if source_type == "gitlab" else "🐙",
+            assigned=assigned or [],
+            authored=authored or [],
+            available=available,
+            authenticated=authenticated,
+            fetch_delay=fetch_delay,
+            assigned_exception=failure_exception if should_fail else None,
+            authored_exception=failure_exception if should_fail else None,
+        )
+
+
+class MockGitHubSource(StubCodeReviewSource):
+    """Compatibility wrapper around StubCodeReviewSource for GitHub tests."""
+
+    def __init__(
+        self,
+        assigned: list[CodeReview] | None = None,
+        authored: list[CodeReview] | None = None,
+        available: bool = True,
+        authenticated: bool = True,
+        should_fail: bool = False,
+        failure_exception: Exception | None = None,
+        fetch_delay: float = 0.0,
+        source_type: str = "github",
+    ):
+        super().__init__(
+            source_type=source_type,
+            source_icon="🐙",
+            assigned=assigned or [],
+            authored=authored or [],
+            available=available,
+            authenticated=authenticated,
+            fetch_delay=fetch_delay,
+            assigned_exception=failure_exception if should_fail else None,
+            authored_exception=failure_exception if should_fail else None,
+        )
+
+
+class MockJiraSource(StubPieceOfWorkSource):
+    """Compatibility wrapper around StubPieceOfWorkSource for Jira tests."""
+
+    def __init__(
+        self,
+        items: list[Any] | None = None,
+        available: bool = True,
+        authenticated: bool = True,
+        should_fail: bool = False,
+        failure_exception: Exception | None = None,
+        fetch_delay: float = 0.0,
+        source_type: str = "jira",
+    ):
+        super().__init__(
+            source_type=source_type,
+            source_icon="🔴",
+            items=items or [],
+            available=available,
+            authenticated=authenticated,
+            fetch_delay=fetch_delay,
+            items_exception=failure_exception if should_fail else None,
+        )
+
+
+class MockTodoistSource(StubPieceOfWorkSource):
+    """Compatibility wrapper around StubPieceOfWorkSource for Todoist tests."""
+
+    def __init__(
+        self,
+        items: list[Any] | None = None,
+        available: bool = True,
+        authenticated: bool = True,
+        should_fail: bool = False,
+        failure_exception: Exception | None = None,
+        fetch_delay: float = 0.0,
+        source_type: str = "todoist",
+    ):
+        super().__init__(
+            source_type=source_type,
+            source_icon="📝",
+            items=items or [],
+            available=available,
+            authenticated=authenticated,
+            fetch_delay=fetch_delay,
+            items_exception=failure_exception if should_fail else None,
+        )
 
 
 @pytest.fixture
@@ -37,7 +136,7 @@ def temp_db_path(tmp_path: Path) -> Path:
 
 @pytest.fixture(autouse=True)
 def reset_database_manager() -> Generator[None, None, None]:
-    """Reset the DatabaseManager singleton before each test."""
+    """Reset singleton state before/after each test for deterministic cleanup."""
     DatabaseManager.reset_instance()
     yield
     DatabaseManager.reset_instance()
@@ -52,249 +151,23 @@ async def initialized_db(temp_db_path: Path) -> AsyncGenerator[DatabaseManager, 
     await db.close()
 
 
-class MockCodeReviewSource(CodeReviewSource):
-    """Mock code review source for testing.
-
-    Allows configuring behavior for each test:
-    - assigned_items: Items to return for fetch_assigned
-    - authored_items: Items to return for fetch_authored
-    - should_fail: If True, raises exception on fetch
-    - failure_exception: Exception to raise when should_fail is True
-    """
-
-    def __init__(
-        self,
-        source_type: str,
-        assigned: list[CodeReview] | None = None,
-        authored: list[CodeReview] | None = None,
-        available: bool = True,
-        authenticated: bool = True,
-        should_fail: bool = False,
-        failure_exception: Exception | None = None,
-        fetch_delay: float = 0.0,
-    ):
-        self._source_type = source_type
-        self._assigned = assigned or []
-        self._authored = authored or []
-        self._available = available
-        self._authenticated = authenticated
-        self._should_fail = should_fail
-        self._failure_exception = failure_exception or Exception("Mock fetch failed")
-        self._fetch_delay = fetch_delay
-
-    @property
-    def source_type(self) -> str:
-        return self._source_type
-
-    @property
-    def source_icon(self) -> str:
-        icons = {"gitlab": "🦊", "github": "🐙"}
-        return icons.get(self._source_type, "📦")
-
-    async def is_available(self) -> bool:
-        return self._available
-
-    async def check_auth(self) -> bool:
-        return self._authenticated
-
-    async def fetch_assigned(self) -> list[CodeReview]:
-        if self._fetch_delay > 0:
-            await asyncio.sleep(self._fetch_delay)
-        if self._should_fail:
-            raise self._failure_exception
-        return self._assigned
-
-    async def fetch_authored(self) -> list[CodeReview]:
-        if self._fetch_delay > 0:
-            await asyncio.sleep(self._fetch_delay)
-        if self._should_fail:
-            raise self._failure_exception
-        return self._authored
-
-    async def fetch_pending_review(self) -> list[CodeReview]:
-        return []
-
-
-class MockPieceOfWorkSource(PieceOfWorkSource):
-    """Mock piece of work source for testing.
-
-    Similar to MockCodeReviewSource but for work items.
-    """
-
-    def __init__(
-        self,
-        source_type: str,
-        items: list[Any] | None = None,
-        available: bool = True,
-        authenticated: bool = True,
-        should_fail: bool = False,
-        failure_exception: Exception | None = None,
-        fetch_delay: float = 0.0,
-    ):
-        self._source_type = source_type
-        self._items = items or []
-        self._available = available
-        self._authenticated = authenticated
-        self._should_fail = should_fail
-        self._failure_exception = failure_exception or Exception("Mock fetch failed")
-        self._fetch_delay = fetch_delay
-
-    @property
-    def source_type(self) -> str:
-        return self._source_type
-
-    @property
-    def source_icon(self) -> str:
-        icons = {"jira": "🔴", "todoist": "📝"}
-        return icons.get(self._source_type, "📦")
-
-    async def is_available(self) -> bool:
-        return self._available
-
-    async def check_auth(self) -> bool:
-        return self._authenticated
-
-    async def fetch_items(self) -> list[Any]:
-        if self._fetch_delay > 0:
-            await asyncio.sleep(self._fetch_delay)
-        if self._should_fail:
-            raise self._failure_exception
-        return self._items
-
-
-class MockGitLabSource(MockCodeReviewSource):
-    """Mock GitLab source for testing.
-
-    Pre-configured with source_type="gitlab" and GitLab-specific icon.
-    Tests can set _assigned and _authored attributes to provide data.
-    """
-
-    def __init__(
-        self,
-        assigned: list[CodeReview] | None = None,
-        authored: list[CodeReview] | None = None,
-        available: bool = True,
-        authenticated: bool = True,
-        should_fail: bool = False,
-        failure_exception: Exception | None = None,
-        fetch_delay: float = 0.0,
-    ):
-        super().__init__(
-            source_type="gitlab",
-            assigned=assigned,
-            authored=authored,
-            available=available,
-            authenticated=authenticated,
-            should_fail=should_fail,
-            failure_exception=failure_exception,
-            fetch_delay=fetch_delay,
-        )
-
-
-class MockGitHubSource(MockCodeReviewSource):
-    """Mock GitHub source for testing.
-
-    Pre-configured with source_type="github" and GitHub-specific icon.
-    Tests can set _assigned and _authored attributes to provide data.
-    """
-
-    def __init__(
-        self,
-        assigned: list[CodeReview] | None = None,
-        authored: list[CodeReview] | None = None,
-        available: bool = True,
-        authenticated: bool = True,
-        should_fail: bool = False,
-        failure_exception: Exception | None = None,
-        fetch_delay: float = 0.0,
-    ):
-        super().__init__(
-            source_type="github",
-            assigned=assigned,
-            authored=authored,
-            available=available,
-            authenticated=authenticated,
-            should_fail=should_fail,
-            failure_exception=failure_exception,
-            fetch_delay=fetch_delay,
-        )
-
-
-class MockJiraSource(MockPieceOfWorkSource):
-    """Mock Jira source for testing.
-
-    Pre-configured with source_type="jira" and Jira-specific icon.
-    Tests can set _items attribute to provide data.
-    """
-
-    def __init__(
-        self,
-        items: list[Any] | None = None,
-        available: bool = True,
-        authenticated: bool = True,
-        should_fail: bool = False,
-        failure_exception: Exception | None = None,
-        fetch_delay: float = 0.0,
-    ):
-        super().__init__(
-            source_type="jira",
-            items=items,
-            available=available,
-            authenticated=authenticated,
-            should_fail=should_fail,
-            failure_exception=failure_exception,
-            fetch_delay=fetch_delay,
-        )
-
-
-class MockTodoistSource(MockPieceOfWorkSource):
-    """Mock Todoist source for testing.
-
-    Pre-configured with source_type="todoist" and Todoist-specific icon.
-    Tests can set _items attribute to provide data.
-    """
-
-    def __init__(
-        self,
-        items: list[Any] | None = None,
-        available: bool = True,
-        authenticated: bool = True,
-        should_fail: bool = False,
-        failure_exception: Exception | None = None,
-        fetch_delay: float = 0.0,
-    ):
-        super().__init__(
-            source_type="todoist",
-            items=items,
-            available=available,
-            authenticated=authenticated,
-            should_fail=should_fail,
-            failure_exception=failure_exception,
-            fetch_delay=fetch_delay,
-        )
-
-
 @pytest.fixture
 def mock_gitlab_source() -> MockGitLabSource:
-    """Create an empty mock GitLab source. Tests should populate with data."""
     return MockGitLabSource()
 
 
 @pytest.fixture
 def mock_github_source() -> MockGitHubSource:
-    """Create an empty mock GitHub source. Tests should populate with data."""
     return MockGitHubSource()
 
 
 @pytest.fixture
 def mock_jira_source() -> MockJiraSource:
-    """Create an empty mock Jira source. Tests should populate with data."""
     return MockJiraSource()
 
 
 @pytest.fixture
 def mock_todoist_source() -> MockTodoistSource:
-    """Create an empty mock Todoist source. Tests should populate with data."""
     return MockTodoistSource()
 
 
@@ -305,7 +178,7 @@ def mock_source_registry(
     mock_jira_source: MockJiraSource,
     mock_todoist_source: MockTodoistSource,
 ) -> SourceRegistry:
-    """Create a registry with all mock sources."""
+    """Create a registry with deterministic, unique source identities."""
     registry = SourceRegistry()
     registry.register_code_review_source(mock_gitlab_source)
     registry.register_code_review_source(mock_github_source)
@@ -320,7 +193,6 @@ async def mock_work_store(
     mock_source_registry: SourceRegistry,
 ) -> AsyncGenerator[WorkStore, None]:
     """Create a WorkStore with mocked sources and fresh database."""
-    # Ensure database is initialized
     db = DatabaseManager(str(temp_db_path))
     await db.initialize()
 
@@ -344,11 +216,9 @@ async def app_with_mocked_store(
     monkeypatch: pytest.MonkeyPatch,
 ) -> AsyncGenerator[MonoApp, None]:
     """Create a MonoApp with injected mock WorkStore."""
-    # Initialize database
     db = DatabaseManager(str(temp_db_path))
     await db.initialize()
 
-    # Create WorkStore
     store = WorkStore(
         source_registry=mock_source_registry,
         code_review_ttl=300,
@@ -358,14 +228,10 @@ async def app_with_mocked_store(
 
     app = MonoApp()
 
-    # Patch the work store factory to return our mock
     def mock_create_store(config: Any) -> WorkStore:
         return store
 
-    monkeypatch.setattr(
-        "monocle.ui.work_store_factory.create_work_store",
-        mock_create_store,
-    )
+    monkeypatch.setattr("monocle.ui.work_store_factory.create_work_store", mock_create_store)
 
     yield app
 
@@ -375,14 +241,12 @@ async def app_with_mocked_store(
 
 @pytest.fixture
 def mock_webbrowser() -> Generator[MagicMock, None, None]:
-    """Mock webbrowser.open for testing."""
     with patch("webbrowser.open") as mock:
         yield mock
 
 
 @pytest.fixture
 def code_review_factory() -> Callable[..., CodeReview]:
-    """Factory for creating CodeReview objects."""
     counter = 0
 
     def factory(
@@ -393,89 +257,46 @@ def code_review_factory() -> Callable[..., CodeReview]:
     ) -> CodeReview:
         nonlocal counter
         counter += 1
-
-        defaults = {
-            "id": f"cr-{counter}",
-            "key": f"!{counter}" if adapter_type == "gitlab" else f"#{counter}",
-            "title": f"Test Code Review {counter}",
-            "state": state,
-            "author": "testuser",
-            "source_branch": f"feature/test-{counter}",
-            "url": f"https://example.com/{adapter_type}/pr/{counter}",
-            "created_at": datetime.now(),
-            "draft": draft,
-            "adapter_type": adapter_type,
-            "adapter_icon": "🦊" if adapter_type == "gitlab" else "🐙",
-        }
-        defaults.update(kwargs)
-        return CodeReview(**defaults)
+        icon = "🦊" if adapter_type == "gitlab" else "🐙"
+        review = make_code_review(
+            idx=counter,
+            adapter_type=adapter_type,
+            adapter_icon=icon,
+            state=state,
+        )
+        payload = review.model_dump()
+        payload["draft"] = draft
+        payload.update(kwargs)
+        return CodeReview(**payload)
 
     return factory
 
 
 @pytest.fixture
 def jira_work_item_factory() -> Callable[..., JiraPieceOfWork]:
-    """Factory for creating JiraPieceOfWork objects."""
     counter = 0
 
-    def factory(
-        status: str = "Open",
-        priority: str = "Medium",
-        **kwargs: Any,
-    ) -> JiraPieceOfWork:
+    def factory(**kwargs: Any) -> JiraPieceOfWork:
         nonlocal counter
         counter += 1
-
-        defaults = {
-            "key": f"PROJ-{100 + counter}",
-            "fields": {
-                "summary": f"Test Issue {counter}",
-                "status": {"name": status},
-                "priority": {"name": priority},
-                "assignee": {"displayName": "Test User"},
-            },
-            "self": f"https://jira.example.com/rest/api/2/issue/{10000 + counter}",
-        }
-        defaults.update(kwargs)
-        return JiraPieceOfWork(**defaults)
+        item = make_jira_item(idx=counter)
+        payload = item.model_dump()
+        payload.update(kwargs)
+        return JiraPieceOfWork(**payload)
 
     return factory
 
 
 @pytest.fixture
 def todoist_task_factory() -> Callable[..., TodoistPieceOfWork]:
-    """Factory for creating TodoistPieceOfWork objects."""
     counter = 0
 
-    def factory(
-        priority: int = 1,
-        is_completed: bool = False,
-        **kwargs: Any,
-    ) -> TodoistPieceOfWork:
+    def factory(**kwargs: Any) -> TodoistPieceOfWork:
         nonlocal counter
         counter += 1
-
-        defaults = {
-            "id": f"{100000 + counter}",
-            "content": f"Test Task {counter}",
-            "priority": priority,
-            "due": None,
-            "project_id": "123",
-            "project_name": "Test Project",
-            "url": f"https://todoist.com/showTask?id={100000 + counter}",
-            "is_completed": is_completed,
-        }
-        defaults.update(kwargs)
-        return TodoistPieceOfWork(**defaults)
+        item = make_todoist_item(idx=counter)
+        payload = item.model_dump(by_alias=True)
+        payload.update(kwargs)
+        return TodoistPieceOfWork(**payload)
 
     return factory
-
-
-@pytest.fixture
-def async_timeout() -> Callable[[float], Any]:
-    """Provide async timeout context manager."""
-
-    def timeout(seconds: float):
-        return asyncio.timeout(seconds)
-
-    return timeout

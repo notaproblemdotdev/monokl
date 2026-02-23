@@ -78,7 +78,10 @@ export MONOCLE_JIRA_BASE_URL="https://your-company.atlassian.net"
 uv sync --extra dev
 
 # Run tests
-uv run pytest
+uv run python -m pytest
+uv run python -m pytest -m integration_smoke
+uv run python -m pytest -m integration_full
+uv run python -m pytest -m "integration and not snapshot"
 
 # Run linting
 uv run ruff check .

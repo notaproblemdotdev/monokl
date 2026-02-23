@@ -84,6 +84,8 @@ asyncio_mode = "auto"
 addopts = "-v --cov=src/monocle --cov-report=term-missing"
 markers = [
     "integration: mark test as integration test (uses mocked DB and sources)",
+    "integration_smoke: fast deterministic integration tests for local/PR runs",
+    "integration_full: broader integration coverage including error permutations",
     "snapshot: mark test as snapshot test (requires pytest-textual-snapshot)",
 ]
 
@@ -93,6 +95,7 @@ build-backend = "uv_build"
 
 [dependency-groups]
 dev = [
+    "pytest>=9.0.2",
     "pytest-textual-snapshot>=1.0.0",
     "ruff>=0.15.1",
     "ty>=0.0.15",
