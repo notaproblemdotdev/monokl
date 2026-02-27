@@ -4,7 +4,7 @@
   <img src=".assets/logo.png" alt="Monokl Logo" width="200">
 </p>
 
-A unified terminal dashboard for managing pull/merge requests from GitLab and work items from Jira. Built with an extensible architecture to support additional platforms.
+A collection of developer tools and a unified terminal dashboard for managing pull/merge requests from GitLab and work items from Jira.
 
 ## Why "Monokl"?
 
@@ -14,14 +14,7 @@ The name evolved through a few iterations:
 2. **monocle** — one good looking monocle to see stuff easily, so the dev's life will be easier
 3. **monokl** — "monocle" in Polish (the author is Polish)
 
-The goal: make a developer's daily life easier with a unified terminal dashboard.
-
-## Features
-
-- **GitLab Integration**: View merge requests assigned to you and opened by you
-- **Jira Integration**: View work items assigned to you
-- **Unified Dashboard**: Single interface for all your development tasks
-- **Keyboard Navigation**: Tab to switch sections, j/k to navigate, o to open in browser
+The goal: make a developer's daily life easier with a unified terminal dashboard and useful tools.
 
 ## Installation
 
@@ -35,37 +28,88 @@ Or with uv:
 uv pip install monokl
 ```
 
-## Usage
+## Tools
 
-Run the dashboard:
+Monokl provides a collection of useful developer tools under the `tool` command.
+
+### UUID Generator
+
+Generate UUID4 strings:
 
 ```bash
+# Generate a single UUID
+monokl tool uuid
+
+# Generate multiple UUIDs
+monokl tool uuid --count 5
+
+# Output as JSON
+monokl tool uuid --format json
+
+# Uppercase output
+monokl tool uuid --uppercase
+
+# Without hyphens
+monokl tool uuid --no-hyphens
+```
+
+### Network Tools
+
+Test network connectivity and track response times:
+
+```bash
+# Ping a URL
+monokl tool network ping https://example.com
+
+# Store result in database
+monokl tool network ping https://example.com --store
+
+# Output as JSON
+monokl tool network ping https://example.com --json
+
+# Custom timeout (default 10s)
+monokl tool network ping https://example.com --timeout 5
+
+# View ping history with ASCII chart
+monokl tool network report
+
+# Filter by URL
+monokl tool network report --url https://example.com
+
+# Show last N results
+monokl tool network report --last 50
+
+# Clear ping history
+monokl tool network clear
+monokl tool network clear --url https://example.com  # clear specific URL only
+```
+
+## Dashboard (Experimental)
+
+> **Note**: The dashboard feature is currently experimental and under active development.
+
+A unified TUI dashboard for viewing merge requests and work items:
+
+```bash
+# Launch the TUI dashboard
 monokl dash
-```
 
-Run the dashboard in the browser:
-
-```bash
+# Serve in browser (via textual-serve)
 monokl dash --web
+
+# Custom port/host for web mode
+monokl dash --web --port 8080 --host 0.0.0.0
+
+# Offline mode (cached data only)
+monokl dash --offline
+
+# Clear cache
+monokl dash --clear-cache
 ```
 
-Or:
+### Dashboard Configuration
 
-```bash
-python -m monokl dash
-```
-
-Or with uvx:
-
-```bash
-uvx monokl dash
-# or
-uvx https://github.com/notaproblemdotdev/monokl dash
-```
-
-## Configuration
-
-The app requires the following CLIs to be installed and authenticated:
+The dashboard requires the following CLIs to be installed and authenticated:
 
 - `glab` - GitLab CLI
 - `acli` - Atlassian CLI (for Jira)
@@ -87,6 +131,19 @@ export MONOKL_GITLAB_GROUP="your-group-name"
 export MONOKL_JIRA_BASE_URL="https://your-company.atlassian.net"
 ```
 
+## Other Commands
+
+```bash
+# View logs
+monokl logs
+
+# Interactive setup
+monokl setup
+
+# Show version
+monokl --version
+```
+
 ## Development
 
 ```bash
@@ -105,15 +162,6 @@ uv run ruff check .
 # Run type checking
 uv run ty src/
 ```
-
-## Future Plans
-
-Support for additional platforms is being considered:
-
-- **GitHub** - Pull Requests and Issues
-- **Bitbucket** - Pull Requests
-- **Trello** - Cards and Boards
-- **Todoist** - Tasks and Projects
 
 ## License
 
