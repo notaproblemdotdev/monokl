@@ -9,8 +9,10 @@ import subprocess
 import sys
 import typing as t
 import webbrowser
+from typing import Any
 
 import typer
+from typer.core import TyperCommand
 
 from monocle import __version__
 from monocle import configure_logging
@@ -19,10 +21,57 @@ from monocle.config import ConfigError
 from monocle.config import validate_keyring_available
 from monocle.db.connection import DatabaseManager
 from monocle.db.work_store import WorkStore
+from monocle.features import get_feature_flag
+from monocle.features import is_feature_enabled
 from monocle.logging_config import get_log_file_path
 from monocle.ui.app import MonoApp
 
-app = typer.Typer(
+
+class MonocleApp(typer.Typer):
+    """Typer app that respects feature flags on commands."""
+
+    def command(
+        self,
+        name: str | None = None,
+        *,
+        cls: type[TyperCommand] | None = None,
+        context_settings: dict[Any, Any] | None = None,
+        help: str | None = None,
+        epilog: str | None = None,
+        short_help: str | None = None,
+        options_metavar: str | None = None,
+        add_help_option: bool = True,
+        no_args_is_help: bool = False,
+        hidden: bool = False,
+        deprecated: bool = False,
+        rich_help_panel: str | None = None,
+    ) -> t.Callable[[t.Callable[..., t.Any]], t.Callable[..., t.Any]]:
+        """Decorator to register a command, respecting feature flags."""
+
+        def decorator(func: t.Callable[..., t.Any]) -> t.Callable[..., t.Any]:
+            flag = get_feature_flag(func)
+            if flag and not is_feature_enabled(flag):
+                return func
+
+            return super(MonocleApp, self).command(
+                name=name,
+                cls=cls,
+                context_settings=context_settings,
+                help=help,
+                epilog=epilog,
+                short_help=short_help,
+                options_metavar=options_metavar,
+                add_help_option=add_help_option,
+                no_args_is_help=no_args_is_help,
+                hidden=hidden,
+                deprecated=deprecated,
+                rich_help_panel=rich_help_panel,
+            )(func)
+
+        return decorator
+
+
+app = MonocleApp(
     help="Mono CLI Dashboard - Unified view of PRs and work items",
     no_args_is_help=True,
 )

@@ -95,6 +95,14 @@ class UIConfig(BaseModel):
     preserve_sort_preference: bool = True
 
 
+class FeaturesConfig(BaseModel):
+    """Feature flags configuration."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    experimental: bool = False
+
+
 class AdapterTypeConfig(BaseModel):
     """Configuration for a specific adapter type."""
 
@@ -138,6 +146,7 @@ class AppConfig(BaseModel):
     dev: DevConfig = Field(default_factory=DevConfig)
     ui: UIConfig = Field(default_factory=UIConfig)
     adapters: AdaptersConfig = Field(default_factory=AdaptersConfig)
+    features: FeaturesConfig = Field(default_factory=FeaturesConfig)
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> AppConfig:

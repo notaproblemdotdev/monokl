@@ -160,6 +160,8 @@ class Config:
             data["todoist"] = {}
         if "cache" not in data:
             data["cache"] = {}
+        if "features" not in data:
+            data["features"] = {}
 
         # GitLab settings
         gitlab_group = os.getenv("MONOCLE_GITLAB_GROUP")
@@ -201,6 +203,10 @@ class Config:
                 data["cache"]["ttl_seconds"] = int(cache_ttl)
             except ValueError:
                 pass
+
+        feature_experimental = os.getenv("MONOCLE_FEATURE_EXPERIMENTAL")
+        if feature_experimental:
+            data["features"]["experimental"] = feature_experimental.lower() in ("true", "1", "yes")
 
         return data
 
@@ -340,6 +346,14 @@ class Config:
     def offline_mode(self) -> bool:
         """Get whether offline mode is enabled."""
         return os.getenv("MONOCLE_OFFLINE_MODE", "").lower() in ("true", "1", "yes")
+
+    @property
+    def experimental_features(self) -> bool:
+        """Get whether experimental features are enabled."""
+        env_val = os.getenv("MONOCLE_FEATURE_EXPERIMENTAL", "").lower()
+        if env_val in ("true", "1", "yes"):
+            return True
+        return self._model.features.experimental
 
     @property
     def cache_cleanup_days(self) -> int:
