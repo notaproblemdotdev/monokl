@@ -12,7 +12,7 @@ dependencies = [
     "pydantic>=2.12.5",
     "structlog>=24.1.0",
     "pyyaml>=6.0.0",
-    "textual-web>=0.4.2",
+
     "textual-dev>=1.8.0",
     "textual-serve>=1.1.0",
     "todoist-api-python>=3.1.0,<4",
