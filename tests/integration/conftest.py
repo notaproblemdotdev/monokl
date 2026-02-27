@@ -12,13 +12,13 @@ from unittest.mock import patch
 
 import pytest
 
-from monocle.db.connection import DatabaseManager
-from monocle.db.work_store import WorkStore
-from monocle.models import CodeReview
-from monocle.models import JiraPieceOfWork
-from monocle.models import TodoistPieceOfWork
-from monocle.sources.registry import SourceRegistry
-from monocle.ui.app import MonoApp
+from monokl.db.connection import DatabaseManager
+from monokl.db.work_store import WorkStore
+from monokl.models import CodeReview
+from monokl.models import JiraPieceOfWork
+from monokl.models import TodoistPieceOfWork
+from monokl.sources.registry import SourceRegistry
+from monokl.ui.app import MonoApp
 from tests.support.factories import make_code_review
 from tests.support.factories import make_jira_item
 from tests.support.factories import make_todoist_item
@@ -231,7 +231,7 @@ async def app_with_mocked_store(
     def mock_create_store(config: Any) -> WorkStore:
         return store
 
-    monkeypatch.setattr("monocle.ui.work_store_factory.create_work_store", mock_create_store)
+    monkeypatch.setattr("monokl.ui.work_store_factory.create_work_store", mock_create_store)
 
     yield app
 

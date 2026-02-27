@@ -5,10 +5,10 @@ from __future__ import annotations
 from textual.app import App
 from textual.app import ComposeResult
 
-from monocle.ui.sections import CodeReviewSection
-from monocle.ui.sections import CodeReviewSubSection
-from monocle.ui.sections import PieceOfWorkSection
-from monocle.ui.sections import SectionState
+from monokl.ui.sections import CodeReviewSection
+from monokl.ui.sections import CodeReviewSubSection
+from monokl.ui.sections import PieceOfWorkSection
+from monokl.ui.sections import SectionState
 from tests.support.factories import make_code_review
 from tests.support.factories import make_jira_item
 

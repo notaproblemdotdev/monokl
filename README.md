@@ -1,10 +1,20 @@
-# Monocle
+# Monokl
 
 <p align="center">
-  <img src=".assets/logo.png" alt="Monocle Logo" width="200">
+  <img src=".assets/logo.png" alt="Monokl Logo" width="200">
 </p>
 
 A unified terminal dashboard for managing pull/merge requests from GitLab and work items from Jira. Built with an extensible architecture to support additional platforms.
+
+## Why "Monokl"?
+
+The name evolved through a few iterations:
+
+1. **monocli** — one CLI for a lot of things, an easy entrypoint for the user
+2. **monocle** — one good looking monocle to see stuff easily, so the dev's life will be easier
+3. **monokl** — "monocle" in Polish (the author is Polish)
+
+The goal: make a developer's daily life easier with a unified terminal dashboard.
 
 ## Features
 
@@ -16,13 +26,13 @@ A unified terminal dashboard for managing pull/merge requests from GitLab and wo
 ## Installation
 
 ```bash
-pip install monocle
+pip install monokl
 ```
 
 Or with uv:
 
 ```bash
-uv pip install monocle
+uv pip install monokl
 ```
 
 ## Usage
@@ -30,27 +40,27 @@ uv pip install monocle
 Run the dashboard:
 
 ```bash
-monocle dash
+monokl dash
 ```
 
 Run the dashboard in the browser:
 
 ```bash
-monocle dash --web
+monokl dash --web
 ```
 
 Or:
 
 ```bash
-python -m monocle dash
+python -m monokl dash
 ```
 
 Or with uvx:
 
 ```bash
-uvx monocle dash
+uvx monokl dash
 # or
-uvx https://github.com/notaproblemdotdev/monocle dash
+uvx https://github.com/notaproblemdotdev/monokl dash
 ```
 
 ## Configuration
@@ -60,7 +70,7 @@ The app requires the following CLIs to be installed and authenticated:
 - `glab` - GitLab CLI
 - `acli` - Atlassian CLI (for Jira)
 
-Configure your GitLab group and Jira settings in `~/.config/monocle/config.yaml`:
+Configure your GitLab group and Jira settings in `~/.config/monokl/config.yaml`:
 
 ```yaml
 gitlab:
@@ -73,8 +83,8 @@ jira:
 Alternatively, use environment variables:
 
 ```bash
-export MONOCLE_GITLAB_GROUP="your-group-name"
-export MONOCLE_JIRA_BASE_URL="https://your-company.atlassian.net"
+export MONOKL_GITLAB_GROUP="your-group-name"
+export MONOKL_JIRA_BASE_URL="https://your-company.atlassian.net"
 ```
 
 ## Development

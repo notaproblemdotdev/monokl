@@ -6,8 +6,8 @@ from typing import cast
 
 import pytest
 
-from monocle.ui.main_screen import MainScreen
-from monocle.ui.sections import SectionState
+from monokl.ui.main_screen import MainScreen
+from monokl.ui.sections import SectionState
 from tests.support.factories import make_code_review
 from tests.support.factories import make_jira_item
 

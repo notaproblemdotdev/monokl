@@ -9,10 +9,10 @@ from typing import Any
 
 import pytest
 
-from monocle.db.connection import DatabaseManager
-from monocle.db.work_store import WorkStore
-from monocle.sources.registry import SourceRegistry
-from monocle.ui.app import MonoApp
+from monokl.db.connection import DatabaseManager
+from monokl.db.work_store import WorkStore
+from monokl.sources.registry import SourceRegistry
+from monokl.ui.app import MonoApp
 from tests.support.stubs import StubCodeReviewSource
 from tests.support.stubs import StubPieceOfWorkSource
 
@@ -109,5 +109,5 @@ async def app_with_stub_store(
     def mock_create_store(config: Any) -> WorkStore:
         return stub_work_store
 
-    monkeypatch.setattr("monocle.ui.work_store_factory.create_work_store", mock_create_store)
+    monkeypatch.setattr("monokl.ui.work_store_factory.create_work_store", mock_create_store)
     return app

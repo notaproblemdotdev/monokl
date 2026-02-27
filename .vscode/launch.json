@@ -6,10 +6,10 @@
     "configurations": [
 
         {
-            "name": "monocle",
+            "name": "monokl",
             "type": "debugpy",
             "request": "launch",
-            "module": "monocle",
+            "module": "monokl",
             "args": ["--debug"],
         }
     ]

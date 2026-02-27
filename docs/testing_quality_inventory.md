@@ -13,8 +13,8 @@
 
 | Priority | File(s) | Class | Root Cause |
 |---|---|---|---|
-| P0 | `src/monocle/ui/sections.py` | app regression | `CodeReviewSection` child not initialized before access |
-| P0 | `src/monocle/db/work_store.py` | app regression | cached review deserialization missing runtime symbol |
+| P0 | `src/monokl/ui/sections.py` | app regression | `CodeReviewSection` child not initialized before access |
+| P0 | `src/monokl/db/work_store.py` | app regression | cached review deserialization missing runtime symbol |
 | P1 | `tests/ui/test_main_screen.py`, `tests/ui/test_navigation.py` | test drift | legacy screen/section names and assumptions |
 | P1 | `tests/integration/*` | test drift + harness quality | mixed ad-hoc mocks, duplicate source identities, invalid exception constructors |
 | P2 | `tests/integration/*` | teardown hygiene | inconsistent DB teardown and loop-close warnings |

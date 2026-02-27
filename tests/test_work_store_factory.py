@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from monocle.ui.work_store_factory import create_work_store
+from monokl.ui.work_store_factory import create_work_store
 
 
 class _DummyConfig:

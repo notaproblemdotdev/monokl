@@ -7,7 +7,7 @@ import pytest
 from textual.app import App
 from textual.app import ComposeResult
 
-from monocle.ui.spinner import StatusSpinner
+from monokl.ui.spinner import StatusSpinner
 
 
 class SpinnerTestApp(App[None]):

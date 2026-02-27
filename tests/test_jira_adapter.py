@@ -11,10 +11,10 @@ from unittest.mock import patch
 
 import pytest
 
-from monocle.exceptions import CLIAuthError
-from monocle.exceptions import CLINotFoundError
-from monocle.models import JiraWorkItem
-from monocle.sources.jira._cli import JiraAdapter
+from monokl.exceptions import CLIAuthError
+from monokl.exceptions import CLINotFoundError
+from monokl.models import JiraWorkItem
+from monokl.sources.jira._cli import JiraAdapter
 
 
 @pytest.fixture

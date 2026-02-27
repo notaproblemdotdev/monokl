@@ -3,11 +3,11 @@
 from pathlib import Path
 from unittest.mock import patch
 
-from monocle.logging_config import configure_logging
-from monocle.logging_config import ensure_log_dir
-from monocle.logging_config import filter_sensitive_data
-from monocle.logging_config import get_log_file_path
-from monocle.logging_config import get_logger
+from monokl.logging_config import configure_logging
+from monokl.logging_config import ensure_log_dir
+from monokl.logging_config import filter_sensitive_data
+from monokl.logging_config import get_log_file_path
+from monokl.logging_config import get_logger
 
 
 class TestLogDirectory:
@@ -15,19 +15,19 @@ class TestLogDirectory:
 
     def test_ensure_log_dir_creates_directory(self, tmp_path: Path) -> None:
         """Test that ensure_log_dir creates the log directory."""
-        test_dir = tmp_path / ".local" / "share" / "monocle" / "logs"
+        test_dir = tmp_path / ".local" / "share" / "monokl" / "logs"
 
-        with patch("monocle.logging_config.LOG_DIR", test_dir):
+        with patch("monokl.logging_config.LOG_DIR", test_dir):
             ensure_log_dir()
             assert test_dir.exists()
             assert test_dir.is_dir()
 
     def test_ensure_log_dir_idempotent(self, tmp_path: Path) -> None:
         """Test that ensure_log_dir is idempotent."""
-        test_dir = tmp_path / ".local" / "share" / "monocle" / "logs"
+        test_dir = tmp_path / ".local" / "share" / "monokl" / "logs"
         test_dir.mkdir(parents=True)
 
-        with patch("monocle.logging_config.LOG_DIR", test_dir):
+        with patch("monokl.logging_config.LOG_DIR", test_dir):
             ensure_log_dir()
             assert test_dir.exists()
 
@@ -39,13 +39,13 @@ class TestLogFilePath:
         """Test that log file path has correct naming format."""
         test_dir = tmp_path / "logs"
 
-        with patch("monocle.logging_config.LOG_DIR", test_dir):
+        with patch("monokl.logging_config.LOG_DIR", test_dir):
             path = get_log_file_path()
             assert path.parent == test_dir
-            assert path.name.startswith("monocle_")
+            assert path.name.startswith("monokl_")
             assert path.name.endswith(".log")
             # Should contain date pattern (YYYY-MM-DD)
-            assert len(path.stem) == len("monocle_YYYY-MM-DD")
+            assert len(path.stem) == len("monokl_YYYY-MM-DD")
 
 
 class TestConfigureLogging:
@@ -56,7 +56,7 @@ class TestConfigureLogging:
         test_dir = tmp_path / "logs"
 
         with (
-            patch("monocle.logging_config.LOG_DIR", test_dir),
+            patch("monokl.logging_config.LOG_DIR", test_dir),
             patch("logging.basicConfig") as mock_basic_config,
             patch("structlog.configure") as mock_structlog_config,
         ):
@@ -71,7 +71,7 @@ class TestConfigureLogging:
         test_dir = tmp_path / "logs"
 
         with (
-            patch("monocle.logging_config.LOG_DIR", test_dir),
+            patch("monokl.logging_config.LOG_DIR", test_dir),
             patch("os.environ", {"LOG_LEVEL": "WARNING"}),
             patch("logging.basicConfig") as mock_basic_config,
             patch("structlog.configure") as mock_structlog_config,
@@ -87,7 +87,7 @@ class TestConfigureLogging:
         test_dir = tmp_path / "logs"
 
         with (
-            patch("monocle.logging_config.LOG_DIR", test_dir),
+            patch("monokl.logging_config.LOG_DIR", test_dir),
             patch("os.environ", {}),
             patch("logging.basicConfig") as mock_basic_config,
             patch("structlog.configure") as mock_structlog_config,
@@ -186,13 +186,13 @@ class TestLogFileOutput:
         """Test that logging creates a log file."""
         test_dir = tmp_path / "logs"
 
-        with patch("monocle.logging_config.LOG_DIR", test_dir):
+        with patch("monokl.logging_config.LOG_DIR", test_dir):
             configure_logging(debug=True)
             logger = get_logger("test")
             logger.info("Test message", key="value")
 
             # Check that log file was created
-            log_files = list(test_dir.glob("monocle_*.log"))
+            log_files = list(test_dir.glob("monokl_*.log"))
             assert len(log_files) > 0
 
     def test_log_file_contains_json(self, tmp_path: Path) -> None:

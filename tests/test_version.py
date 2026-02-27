@@ -4,9 +4,9 @@ from importlib.metadata import PackageNotFoundError
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from monocle.version import _format_describe_output
-from monocle.version import _version_from_git
-from monocle.version import get_version
+from monokl.version import _format_describe_output
+from monokl.version import _version_from_git
+from monokl.version import get_version
 
 
 class TestFormatDescribeOutput:
@@ -31,12 +31,12 @@ class TestFormatDescribeOutput:
 class TestVersionFromGit:
     """Tests for git-based version resolution."""
 
-    @patch("monocle.version.subprocess.run")
+    @patch("monokl.version.subprocess.run")
     def test_returns_none_when_git_fails(self, mock_run) -> None:  # type: ignore[no-untyped-def]
         mock_run.return_value = SimpleNamespace(returncode=1, stdout="")
         assert _version_from_git() is None
 
-    @patch("monocle.version.subprocess.run")
+    @patch("monokl.version.subprocess.run")
     def test_returns_parsed_version(self, mock_run) -> None:  # type: ignore[no-untyped-def]
         mock_run.return_value = SimpleNamespace(returncode=0, stdout="v2.0.0-2-gdeadbee\n")
         assert _version_from_git() == "2.0.0+2.gdeadbee"
@@ -48,23 +48,23 @@ class TestGetVersion:
     def test_uses_git_when_available(self) -> None:
         get_version.cache_clear()
         with (
-            patch("monocle.version._version_from_git", return_value="1.0.0+1.gabc1234"),
-            patch("monocle.version.package_version"),
+            patch("monokl.version._version_from_git", return_value="1.0.0+1.gabc1234"),
+            patch("monokl.version.package_version"),
         ):
             assert get_version() == "1.0.0+1.gabc1234"
 
     def test_falls_back_to_package_metadata(self) -> None:
         get_version.cache_clear()
         with (
-            patch("monocle.version._version_from_git", return_value=None),
-            patch("monocle.version.package_version", return_value="3.4.5"),
+            patch("monokl.version._version_from_git", return_value=None),
+            patch("monokl.version.package_version", return_value="3.4.5"),
         ):
             assert get_version() == "3.4.5"
 
     def test_falls_back_to_unknown_when_no_metadata(self) -> None:
         get_version.cache_clear()
         with (
-            patch("monocle.version._version_from_git", return_value=None),
-            patch("monocle.version.package_version", side_effect=PackageNotFoundError()),
+            patch("monokl.version._version_from_git", return_value=None),
+            patch("monokl.version.package_version", side_effect=PackageNotFoundError()),
         ):
             assert get_version() == "0.0.0+unknown"

@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from monocle.ui.app import MonoApp
-from monocle.ui.main_screen import MainScreen
+from monokl.ui.app import MonoApp
+from monokl.ui.main_screen import MainScreen
 from tests.support.factories import make_code_review
 from tests.support.factories import make_jira_item
 
@@ -39,7 +39,7 @@ async def test_code_review_section_populated(
     def mock_create_store(config):
         return mock_work_store
 
-    monkeypatch.setattr("monocle.ui.work_store_factory.create_work_store", mock_create_store)
+    monkeypatch.setattr("monokl.ui.work_store_factory.create_work_store", mock_create_store)
 
     async with app.run_test(size=(120, 40)) as pilot:
         await pilot.pause(0.8)
@@ -59,7 +59,7 @@ async def test_piece_of_work_section_populated(
     def mock_create_store(config):
         return mock_work_store
 
-    monkeypatch.setattr("monocle.ui.work_store_factory.create_work_store", mock_create_store)
+    monkeypatch.setattr("monokl.ui.work_store_factory.create_work_store", mock_create_store)
 
     async with app.run_test(size=(120, 40)) as pilot:
         await pilot.pause(0.8)
@@ -79,7 +79,7 @@ async def test_error_state_visual(
     def mock_create_store(config):
         return mock_work_store
 
-    monkeypatch.setattr("monocle.ui.work_store_factory.create_work_store", mock_create_store)
+    monkeypatch.setattr("monokl.ui.work_store_factory.create_work_store", mock_create_store)
 
     async with app.run_test(size=(120, 40)) as pilot:
         await pilot.pause(0.8)

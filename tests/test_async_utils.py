@@ -4,11 +4,11 @@ import asyncio
 
 import pytest
 
-from monocle.async_utils import CLIAdapter
-from monocle.async_utils import _subprocess_semaphore
-from monocle.async_utils import run_cli_command
-from monocle.exceptions import CLIError
-from monocle.exceptions import CLINotFoundError
+from monokl.async_utils import CLIAdapter
+from monokl.async_utils import _subprocess_semaphore
+from monokl.async_utils import run_cli_command
+from monokl.exceptions import CLIError
+from monokl.exceptions import CLINotFoundError
 
 
 class TestConcurrentSubprocesses:
@@ -221,8 +221,8 @@ class TestModelParsingIntegration:
 
     @pytest.mark.asyncio
     async def test_fetch_and_parse_with_real_models(self):
-        """Test integration with actual monocle models."""
-        from monocle.models import MergeRequest
+        """Test integration with actual monokl models."""
+        from monokl.models import MergeRequest
 
         adapter = CLIAdapter("echo")
         # Simulate a GitLab MR JSON response

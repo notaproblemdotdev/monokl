@@ -1,5 +1,5 @@
 [project]
-name = "monocle"
+name = "monokl"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
@@ -22,8 +22,8 @@ dependencies = [
 ]
 
 [project.scripts]
-monocle = "monocle.__main__:app"
-monocle-dev = "monocle.__main__:run_dev"
+monokl = "monokl.__main__:app"
+monokl-dev = "monokl.__main__:run_dev"
 
 [project.optional-dependencies]
 dev = [
@@ -81,7 +81,7 @@ show_error_codes = true
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 asyncio_mode = "auto"
-addopts = "-v --cov=src/monocle --cov-report=term-missing"
+addopts = "-v --cov=src/monokl --cov-report=term-missing"
 markers = [
     "integration: mark test as integration test (uses mocked DB and sources)",
     "integration_smoke: fast deterministic integration tests for local/PR runs",

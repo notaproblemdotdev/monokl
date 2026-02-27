@@ -6,10 +6,10 @@ This project uses **uv** for all development tasks. Never use `python`, `pip`, o
 
 ```bash
 # Run the app
-uv run python -m monocle
+uv run python -m monokl
 
 # Run with hot reload (for UI development)
-uv run monocle-dev
+uv run monokl-dev
 
 # Run tests
 uv run python -m pytest
@@ -28,12 +28,12 @@ uv sync --extra dev
 
 ## Project Structure
 
-- `src/monocle/` — main package (src layout)
-- `src/monocle/models.py` — Pydantic models (MergeRequest, JiraWorkItem)
-- `src/monocle/async_utils.py` — CLIAdapter base class, async subprocess utilities
-- `src/monocle/exceptions.py` — CLIAuthError, CLINotFoundError, CLIError
-- `src/monocle/adapters/` — CLI adapters (GitLab, Jira) and detection
-- `src/monocle/ui/` — Textual UI (sections, main screen, app)
+- `src/monokl/` — main package (src layout)
+- `src/monokl/models.py` — Pydantic models (MergeRequest, JiraWorkItem)
+- `src/monokl/async_utils.py` — CLIAdapter base class, async subprocess utilities
+- `src/monokl/exceptions.py` — CLIAuthError, CLINotFoundError, CLIError
+- `src/monokl/adapters/` — CLI adapters (GitLab, Jira) and detection
+- `src/monokl/ui/` — Textual UI (sections, main screen, app)
 - `tests/` — pytest test suite
 
 ## Code Quality

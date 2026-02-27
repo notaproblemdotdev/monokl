@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from monocle.ui.sections import SectionState
+from monokl.ui.sections import SectionState
 from tests.support.factories import make_cli_auth_error
 from tests.support.factories import make_code_review
 from tests.support.factories import make_todoist_item
@@ -15,9 +15,9 @@ pytestmark = [pytest.mark.integration, pytest.mark.asyncio]
 @pytest.mark.integration_full
 async def test_partial_timeout_one_source_succeeds(temp_db_path, reset_database_manager) -> None:
     """A failing source should not prevent successful sources from returning data."""
-    from monocle.db.connection import DatabaseManager
-    from monocle.db.work_store import WorkStore
-    from monocle.sources.registry import SourceRegistry
+    from monokl.db.connection import DatabaseManager
+    from monokl.db.work_store import WorkStore
+    from monokl.sources.registry import SourceRegistry
     from tests.integration.conftest import MockGitHubSource
     from tests.integration.conftest import MockGitLabSource
 
@@ -51,10 +51,10 @@ async def test_partial_timeout_one_source_succeeds(temp_db_path, reset_database_
 @pytest.mark.integration_full
 async def test_auth_failure_display_in_ui(monkeypatch, temp_db_path) -> None:
     """Auth failures should be tracked and leave section in non-data state."""
-    from monocle.db.connection import DatabaseManager
-    from monocle.db.work_store import WorkStore
-    from monocle.sources.registry import SourceRegistry
-    from monocle.ui.app import MonoApp
+    from monokl.db.connection import DatabaseManager
+    from monokl.db.work_store import WorkStore
+    from monokl.sources.registry import SourceRegistry
+    from monokl.ui.app import MonoApp
     from tests.integration.conftest import MockGitLabSource
 
     auth_fail_source = MockGitLabSource(
@@ -74,7 +74,7 @@ async def test_auth_failure_display_in_ui(monkeypatch, temp_db_path) -> None:
     def mock_create_store(config):
         return store
 
-    monkeypatch.setattr("monocle.ui.work_store_factory.create_work_store", mock_create_store)
+    monkeypatch.setattr("monokl.ui.work_store_factory.create_work_store", mock_create_store)
 
     async with app.run_test(size=(120, 40)) as pilot:
         await pilot.pause(0.6)
@@ -91,9 +91,9 @@ async def test_auth_failure_display_in_ui(monkeypatch, temp_db_path) -> None:
 @pytest.mark.integration_full
 async def test_work_item_partial_failure(temp_db_path, reset_database_manager) -> None:
     """A failing work source should still return successful items from another source."""
-    from monocle.db.connection import DatabaseManager
-    from monocle.db.work_store import WorkStore
-    from monocle.sources.registry import SourceRegistry
+    from monokl.db.connection import DatabaseManager
+    from monokl.db.work_store import WorkStore
+    from monokl.sources.registry import SourceRegistry
     from tests.integration.conftest import MockJiraSource
     from tests.integration.conftest import MockTodoistSource
 

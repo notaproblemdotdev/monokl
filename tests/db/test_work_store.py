@@ -4,13 +4,13 @@ from __future__ import annotations
 
 import pytest
 
-from monocle.db import FetchResult
-from monocle.db import WorkStore
-from monocle.db.connection import DatabaseManager
-from monocle.models import CodeReview
-from monocle.models import PieceOfWork
-from monocle.sources.base import CodeReviewSource
-from monocle.sources.base import PieceOfWorkSource
+from monokl.db import FetchResult
+from monokl.db import WorkStore
+from monokl.db.connection import DatabaseManager
+from monokl.models import CodeReview
+from monokl.models import PieceOfWork
+from monokl.sources.base import CodeReviewSource
+from monokl.sources.base import PieceOfWorkSource
 
 
 class MockCodeReviewSource(CodeReviewSource):
@@ -95,7 +95,7 @@ class TestWorkStore:
         db = DatabaseManager(str(db_path))
         await db.initialize()
 
-        from monocle.sources.registry import SourceRegistry
+        from monokl.sources.registry import SourceRegistry
 
         registry = SourceRegistry()
         review1 = CodeReview(
@@ -142,11 +142,11 @@ class TestWorkStore:
         db = DatabaseManager(str(db_path))
         await db.initialize()
 
-        from monocle.sources.registry import SourceRegistry
+        from monokl.sources.registry import SourceRegistry
 
         registry = SourceRegistry()
         # Create a mock work item that satisfies PieceOfWork protocol
-        from monocle.models import JiraWorkItem
+        from monokl.models import JiraWorkItem
 
         item1 = JiraWorkItem(
             key="TEST-1",
@@ -174,7 +174,7 @@ class TestWorkStore:
         db = DatabaseManager(str(db_path))
         await db.initialize()
 
-        from monocle.sources.registry import SourceRegistry
+        from monokl.sources.registry import SourceRegistry
 
         registry = SourceRegistry()
         registry.register_code_review_source(MockCodeReviewSource("mock"))
@@ -213,7 +213,7 @@ class TestWorkStore:
         db = DatabaseManager(str(db_path))
         await db.initialize()
 
-        from monocle.sources.registry import SourceRegistry
+        from monokl.sources.registry import SourceRegistry
 
         registry = SourceRegistry()
 
@@ -268,7 +268,7 @@ class TestWorkStore:
     @pytest.mark.asyncio
     async def test_fetch_result_structure(self):
         """Test FetchResult dataclass structure."""
-        from monocle.models import CodeReview
+        from monokl.models import CodeReview
 
         review = CodeReview(
             id="1",

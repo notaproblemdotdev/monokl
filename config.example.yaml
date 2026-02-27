@@ -1,5 +1,5 @@
-# monocle example configuration
-# Copy this file to ~/.config/monocle/config.yaml and fill in your values
+# monokl example configuration
+# Copy this file to ~/.config/monokl/config.yaml and fill in your values
 
 # GitLab configuration
 gitlab:
@@ -13,13 +13,13 @@ jira:
 todoist:
   # SECURE: Tokens are stored in your system keyring (Keychain/Secret Service/Credential Manager)
   #
-  # To set your token securely, add it here once and monocle will automatically:
+  # To set your token securely, add it here once and monokl will automatically:
   #   1. Migrate it to your system keyring
   #   2. Remove it from this file
   #
   # Get your API token from: https://todoist.com/app/settings/integrations/developer
   #
-  # For environment-based auth (CI/CD), use: MONOCLE_TODOIST_TOKEN
+  # For environment-based auth (CI/CD), use: MONOKL_TODOIST_TOKEN
   # token: "your-todoist-api-token-here"  # Will be migrated to keyring on first run
 
   # Optional: Filter to specific projects (leave empty to show all)
@@ -41,6 +41,6 @@ dev:
   show_logs_command: "tail -f {file}"
 
 # Environment variable overrides:
-# - MONOCLE_GITLAB_GROUP overrides gitlab.group
-# - MONOCLE_JIRA_PROJECT overrides jira.project
-# - MONOCLE_TODOIST_TOKEN overrides todoist.token
+# - MONOKL_GITLAB_GROUP overrides gitlab.group
+# - MONOKL_JIRA_PROJECT overrides jira.project
+# - MONOKL_TODOIST_TOKEN overrides todoist.token

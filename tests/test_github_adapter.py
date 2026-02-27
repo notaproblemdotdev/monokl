@@ -8,8 +8,8 @@ from unittest.mock import patch
 
 import pytest
 
-from monocle.exceptions import CLIAuthError
-from monocle.sources.github._cli import GitHubAdapter
+from monokl.exceptions import CLIAuthError
+from monokl.sources.github._cli import GitHubAdapter
 
 
 @pytest.mark.asyncio

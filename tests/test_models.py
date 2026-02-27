@@ -11,12 +11,12 @@ from typing import Any
 import pytest
 from pydantic import ValidationError
 
-from monocle.models import GitHubIssue
-from monocle.models import JiraWorkItem
-from monocle.models import MergeRequest
-from monocle.models import Priority
-from monocle.models import PullRequest
-from monocle.models import WorkItemStatus
+from monokl.models import GitHubIssue
+from monokl.models import JiraWorkItem
+from monokl.models import MergeRequest
+from monokl.models import Priority
+from monokl.models import PullRequest
+from monokl.models import WorkItemStatus
 
 # =============================================================================
 # Fixtures - Valid sample data

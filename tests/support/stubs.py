@@ -5,10 +5,10 @@ from __future__ import annotations
 import asyncio
 from dataclasses import dataclass
 
-from monocle.models import CodeReview
-from monocle.models import PieceOfWork
-from monocle.sources.base import CodeReviewSource
-from monocle.sources.base import PieceOfWorkSource
+from monokl.models import CodeReview
+from monokl.models import PieceOfWork
+from monokl.sources.base import CodeReviewSource
+from monokl.sources.base import PieceOfWorkSource
 from tests.support.factories import make_code_review
 from tests.support.factories import make_jira_item
 from tests.support.factories import make_todoist_item

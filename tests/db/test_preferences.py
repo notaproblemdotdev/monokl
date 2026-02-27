@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from monocle.db.connection import DatabaseManager
-from monocle.db.preferences import PreferencesManager
+from monokl.db.connection import DatabaseManager
+from monokl.db.preferences import PreferencesManager
 
 
 @pytest.fixture

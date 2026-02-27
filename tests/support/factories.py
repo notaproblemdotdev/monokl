@@ -6,11 +6,11 @@ from collections.abc import Callable
 from datetime import UTC
 from datetime import datetime
 
-from monocle.exceptions import CLIAuthError
-from monocle.exceptions import CLIError
-from monocle.models import CodeReview
-from monocle.models import JiraPieceOfWork
-from monocle.models import TodoistPieceOfWork
+from monokl.exceptions import CLIAuthError
+from monokl.exceptions import CLIError
+from monokl.models import CodeReview
+from monokl.models import JiraPieceOfWork
+from monokl.models import TodoistPieceOfWork
 
 
 def make_code_review(
