@@ -1,10 +1,10 @@
-# Mono CLI Dashboard - ASCII Mockup
+# Monokl Dashboard - ASCII Mockup
 
 ## Layout Overview
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│ Mono CLI — Unified Dashboard                                      [q] Quit  │
+│ Monokl — Unified Dashboard                                        [q] Quit  │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
 │ ┌─ Merge Requests (GitLab) ───────────────────────────────────────────────┐ │

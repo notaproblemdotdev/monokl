@@ -48,7 +48,7 @@ class MonoApp(App):
         Binding("s", "open_setup", "Setup", show=False),
     ]
 
-    TITLE = "Mono CLI"
+    TITLE = "Monokl"
     SUB_TITLE = "Unified Dashboard"
 
     CSS = """

@@ -1,4 +1,4 @@
-"""Main screen for the Mono CLI dashboard.
+"""Main screen for the Monokl dashboard.
 
 Provides MainScreen class that composes CodeReviewSection and PieceOfWorkSection
 into a 50/50 vertical layout with async data fetching from various sources.

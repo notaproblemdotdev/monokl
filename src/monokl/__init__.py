@@ -1,4 +1,4 @@
-"""Mono CLI - Unified terminal dashboard for PRs and work items."""
+"""Monokl - Unified terminal dashboard for PRs and work items."""
 
 from monokl.logging_config import configure_logging
 from monokl.logging_config import get_logger

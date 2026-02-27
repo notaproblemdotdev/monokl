@@ -1,4 +1,4 @@
-"""Topbar widget for the Mono CLI dashboard.
+"""Topbar widget for the Monokl dashboard.
 
 Provides TopBar class that displays the app title with version information.
 """

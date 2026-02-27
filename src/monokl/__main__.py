@@ -73,7 +73,7 @@ class MonoklApp(typer.Typer):
 
 
 app = MonoklApp(
-    help="Mono CLI Dashboard - Unified view of PRs and work items",
+    help="Monokl Dashboard - Unified view of PRs and work items",
     no_args_is_help=True,
 )
 app.add_typer(tools_app, name="tool")
@@ -145,7 +145,7 @@ def dash(
     configure_logging(debug=debug)
     logger = get_logger()
     logger.info(
-        "Starting Mono CLI Dashboard",
+        "Starting Monokl Dashboard",
         version=__version__,
         debug_mode=debug,
         web_mode=web,
@@ -204,7 +204,7 @@ def setup(
 ) -> None:
     configure_logging(debug=debug)
     logger = get_logger()
-    logger.info("Starting Mono CLI Setup", version=__version__, debug_mode=debug)
+    logger.info("Starting Monokl Setup", version=__version__, debug_mode=debug)
 
     try:
         validate_keyring_available()
